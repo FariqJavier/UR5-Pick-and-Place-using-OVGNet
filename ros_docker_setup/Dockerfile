@@ -1,5 +1,5 @@
 FROM osrf/ros:noetic-desktop-full
-MAINTAINER Fariq Javier
+
 ENV DEBIAN_FRONTEND noninteractive
 SHELL ["/bin/bash", "-c"]
 
@@ -7,6 +7,8 @@ RUN apt-get update \
     && apt-get install -y \
     python3-pip \
     python3-catkin-tools \
+    ros-noetic-ur-robot-driver \ 
+    ros-noetic-ur-calibration \
     && rm -rf /var/lib/apt/lists/*
 
 # Create the "ros" user, with the host user' IDs
