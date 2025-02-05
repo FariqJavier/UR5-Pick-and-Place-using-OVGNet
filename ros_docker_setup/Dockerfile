@@ -5,6 +5,7 @@ SHELL ["/bin/bash", "-c"]
 
 RUN apt-get update \
     && apt-get install -y \
+    nano \
     python3-pip \
     python3-catkin-tools \
     ros-noetic-ur-robot-driver \ 
@@ -29,7 +30,7 @@ USER $USERNAME
 # Run rosdep update, add ROS, Gazebo, and colcon setup to ros user's .bashrc
 RUN sudo apt-get update \
     && rosdep update \
-    && echo 'source /opt/ros/${ROS_DISTRO}/setup.bash' >> /home/$USERNAME/.bashrc 
+    && echo 'source /opt/ros/noetic/setup.bash' >> /home/$USERNAME/.bashrc 
 
 # Create catkin workspace directory and set it as the working directory
 RUN mkdir -p /home/$USERNAME/catkin_ws/src \
@@ -43,3 +44,4 @@ RUN source /opt/ros/${ROS_DISTRO}/setup.bash \
     && sudo rosdep install --from-paths . --ignore-src -r -y --rosdistro=${ROS_DISTRO} \
     && catkin init \
     && catkin build \
+    && echo 'source /home/ros/catkin_ws/devel/setup.bash' >> /home/$USERNAME/.bashrc
