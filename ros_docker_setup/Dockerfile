@@ -1,0 +1,43 @@
+FROM osrf/ros:noetic-desktop-full
+MAINTAINER Fariq Javier
+ENV DEBIAN_FRONTEND noninteractive
+SHELL ["/bin/bash", "-c"]
+
+RUN apt-get update \
+    && apt-get install -y \
+    python3-pip \
+    python3-catkin-tools \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create the "ros" user, with the host user' IDs
+ARG USER_ID=1000
+ARG GROUP_ID=1000
+
+ENV USERNAME ros
+RUN adduser --disabled-password --gecos '' $USERNAME \
+    && usermod  --uid ${USER_ID} $USERNAME \
+    && groupmod --gid ${GROUP_ID} $USERNAME \
+    && usermod --shell /bin/bash $USERNAME \
+    && adduser $USERNAME sudo \
+    && adduser $USERNAME dialout \
+    && echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+
+USER $USERNAME
+
+# Run rosdep update, add ROS, Gazebo, and colcon setup to ros user's .bashrc
+RUN sudo apt-get update \
+    && rosdep update \
+    && echo 'source /opt/ros/${ROS_DISTRO}/setup.bash' >> /home/$USERNAME/.bashrc 
+
+# Create catkin workspace directory and set it as the working directory
+RUN mkdir -p /home/$USERNAME/catkin_ws/src \
+    && chown -R $USERNAME:$USERNAME /home/$USERNAME/catkin_ws
+WORKDIR /home/$USERNAME/catkin_ws
+
+# Copy code into workspace, run rosdep install for workspace, build, and source setup in ros user's
+COPY --chown=ros ./src src
+RUN source /opt/ros/${ROS_DISTRO}/setup.bash \
+    && cd /home/$USERNAME/catkin_ws \	
+    && sudo rosdep install --from-paths . --ignore-src -r -y --rosdistro=${ROS_DISTRO} \
+    && catkin init \
+    && catkin build \

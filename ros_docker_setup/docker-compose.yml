@@ -1,0 +1,27 @@
+
+services:
+  dev:
+    build:
+        context: ../workspace
+        dockerfile: ../ros_docker_setup/Dockerfile
+        args:
+          USER_ID: ${USER_ID:-0}
+          GROUP_ID: ${GROUP_ID:-0}
+    image: ur5/ros:noetic
+    container_name: ros_noetic
+    network_mode: "host"           # access to host's network
+    stdin_open: true               # docker run -i
+    tty: true                      # docker run -t
+    environment:
+      - DISPLAY=${DISPLAY}             # Pass the display for GUI
+      - QT_X11_NO_MITSHM=1             # Needed by QT programs
+      - LIBGL_ALWAYS_SOFTWARE=1
+      - XAUTHORITY=/tmp/.docker.xauth
+    volumes:
+       - /tmp/.X11-unix:/tmp/.X11-unix:rw
+       - /tmp/.docker.xauth:/tmp/.docker.xauth:rw
+       - ../workspace/src:/home/ros/catkin_ws/src
+       - ../data:/home/ros/data
+    devices: 
+       - /dev/dri:/dev/dri
+    privileged: true
