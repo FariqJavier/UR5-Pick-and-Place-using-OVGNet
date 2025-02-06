@@ -31,6 +31,8 @@ USER $USERNAME
 RUN sudo apt-get update \
     && rosdep update \
     && echo 'source /opt/ros/noetic/setup.bash' >> /home/$USERNAME/.bashrc 
+    
+RUN echo 'export ROBOT_IP=192.168.1.3' >> /home/$USERNAME/.bashrc
 
 # Create catkin workspace directory and set it as the working directory
 RUN mkdir -p /home/$USERNAME/catkin_ws/src \
@@ -39,9 +41,9 @@ WORKDIR /home/$USERNAME/catkin_ws
 
 # Copy code into workspace, run rosdep install for workspace, build, and source setup in ros user's
 COPY --chown=ros ./src src
-RUN source /opt/ros/${ROS_DISTRO}/setup.bash \
+RUN source /opt/ros/noetic/setup.bash \
     && cd /home/$USERNAME/catkin_ws \	
-    && sudo rosdep install --from-paths . --ignore-src -r -y --rosdistro=${ROS_DISTRO} \
+    && sudo rosdep install --from-paths . --ignore-src -r -y --rosdistro=noetic \
     && catkin init \
     && catkin build \
     && echo 'source /home/ros/catkin_ws/devel/setup.bash' >> /home/$USERNAME/.bashrc
