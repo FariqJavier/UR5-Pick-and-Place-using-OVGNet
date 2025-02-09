@@ -1,16 +1,21 @@
 FROM osrf/ros:noetic-desktop-full
 
 ENV DEBIAN_FRONTEND noninteractive
+ENV USERNAME ros
+ENV ROS_PYTHON_VERSION=3
+ENV ROS_DISTRO=noetic
+ENV ROBOT_IP=192.168.1.3
+
 SHELL ["/bin/bash", "-c"]
 
-RUN apt-get update \
-    && apt-get install -y \
+# Install essential packages
+RUN sudo apt-get update \
+    && sudo apt-get install -y \ 
     nano \
+    curl \
+    git \
     python3-pip \
-    python3-catkin-tools \
-    ros-noetic-ur-robot-driver \ 
-    ros-noetic-ur-calibration \
-    && rm -rf /var/lib/apt/lists/*
+    python3-catkin-tools 
 
 # Create the "ros" user, with the host user' IDs
 ARG USER_ID=1000
@@ -18,32 +23,56 @@ ARG GROUP_ID=1000
 
 ENV USERNAME ros
 RUN adduser --disabled-password --gecos '' $USERNAME \
-    && usermod  --uid ${USER_ID} $USERNAME \
-    && groupmod --gid ${GROUP_ID} $USERNAME \
+    && usermod  --uid $USER_ID $USERNAME \
+    && groupmod --gid $GROUP_ID $USERNAME \
     && usermod --shell /bin/bash $USERNAME \
     && adduser $USERNAME sudo \
     && adduser $USERNAME dialout \
     && echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
 USER $USERNAME
-
-# Run rosdep update, add ROS, Gazebo, and colcon setup to ros user's .bashrc
-RUN sudo apt-get update \
-    && rosdep update \
-    && echo 'source /opt/ros/noetic/setup.bash' >> /home/$USERNAME/.bashrc 
     
-RUN echo 'export ROBOT_IP=192.168.1.3' >> /home/$USERNAME/.bashrc
+RUN echo 'export ROBOT_IP=${ROBOT_IP}' >> /home/$USERNAME/.bashrc
 
-# Create catkin workspace directory and set it as the working directory
 RUN mkdir -p /home/$USERNAME/catkin_ws/src \
     && chown -R $USERNAME:$USERNAME /home/$USERNAME/catkin_ws
 WORKDIR /home/$USERNAME/catkin_ws
 
-# Copy code into workspace, run rosdep install for workspace, build, and source setup in ros user's
-COPY --chown=ros ./src src
-RUN source /opt/ros/noetic/setup.bash \
+# Copy code into workspace
+COPY --chown=ros ./noetic_src src
+
+# Source ROS environment
+RUN source /opt/$USERNAME/$ROS_DISTRO/setup.bash \
     && cd /home/$USERNAME/catkin_ws \	
-    && sudo rosdep install --from-paths . --ignore-src -r -y --rosdistro=noetic \
-    && catkin init \
-    && catkin build \
-    && echo 'source /home/ros/catkin_ws/devel/setup.bash' >> /home/$USERNAME/.bashrc
+    && catkin init 
+
+# Install additional ROS packages 
+RUN sudo apt-get update \
+    && sudo apt-get install -y \
+    ros-$ROS_DISTRO-moveit \
+    ros-$ROS_DISTRO-ur-robot-driver \
+    ros-$ROS_DISTRO-ur-calibration \
+    ros-$ROS_DISTRO-ros-control \
+    ros-$ROS_DISTRO-ros-controllers \
+    ros-$ROS_DISTRO-warehouse-ros-mongo \
+    ros-$ROS_DISTRO-trac-ik \
+    ros-$ROS_DISTRO-soem \
+    ros-$ROS_DISTRO-socketcan-interface \
+    mongodb \
+    libssl-dev \
+    libboost-all-dev \
+    libsasl2-dev \
+    && sudo rm -rf /var/lib/apt/lists/*
+RUN pip3 install pymodbus
+
+# Install dependencies and build workspace
+RUN source /opt/$USERNAME/$ROS_DISTRO/setup.bash \
+    && sudo apt-get update \
+    && rosdep update \
+    && rosdep install --from-paths . --ignore-src -r -y --rosdistro=$ROS_DISTRO \
+    && catkin build 
+
+RUN sudo apt-get update \
+    && sudo apt-get upgrade \
+    && echo 'source /opt/$USERNAME/$ROS_DISTRO/setup.bash' >> /home/$USERNAME/.bashrc \
+    && echo 'source /home/$USERNAME/catkin_ws/devel/setup.bash' >> /home/$USERNAME/.bashrc

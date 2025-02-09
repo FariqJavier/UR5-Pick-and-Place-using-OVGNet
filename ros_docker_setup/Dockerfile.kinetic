@@ -1,23 +1,30 @@
 FROM osrf/ros:kinetic-desktop-full
 
 ENV DEBIAN_FRONTEND noninteractive
+ENV USERNAME ros
+ENV ROS_PYTHON_VERSION=2
+ENV ROS_DISTRO=kinetic
+ENV ROBOT_IP=192.168.1.3
+
 SHELL ["/bin/bash", "-c"]
 
+# Install essential packages
 RUN apt-get update \
     && apt-get install -y \
+    socat \
+    apt-utils \
     nano \
-    python3-pip \
-    python3-catkin-tools \
-    && rm -rf /var/lib/apt/lists/*
+    curl \
+    git \
+    python3-pip
 
 # Create the "ros" user, with the host user' IDs
 ARG USER_ID=1000
 ARG GROUP_ID=1000
 
-ENV USERNAME ros
 RUN adduser --disabled-password --gecos '' $USERNAME \
-    && usermod  --uid ${USER_ID} $USERNAME \
-    && groupmod --gid ${GROUP_ID} $USERNAME \
+    && usermod  --uid $USER_ID $USERNAME \
+    && groupmod --gid $GROUP_ID $USERNAME \
     && usermod --shell /bin/bash $USERNAME \
     && adduser $USERNAME sudo \
     && adduser $USERNAME dialout \
@@ -25,21 +32,54 @@ RUN adduser --disabled-password --gecos '' $USERNAME \
 
 USER $USERNAME
 
-# Run rosdep update, add ROS, Gazebo, and colcon setup to ros user's .bashrc
-RUN sudo apt-get update \
-    && rosdep update \
-    && echo 'source /opt/ros/kinetic/setup.bash' >> /home/$USERNAME/.bashrc 
+RUN echo 'export ROBOT_IP=$ROBOT_IP' >> /home/$USERNAME/.bashrc
 
-# Create catkin workspace directory and set it as the working directory
 RUN mkdir -p /home/$USERNAME/catkin_ws/src \
     && chown -R $USERNAME:$USERNAME /home/$USERNAME/catkin_ws
 WORKDIR /home/$USERNAME/catkin_ws
 
-# Copy code into workspace, run rosdep install for workspace, build, and source setup in ros user's
-COPY --chown=ros ./src src
-RUN source /opt/ros/kinetic/setup.bash \
-    && cd /home/$USERNAME/catkin_ws \	
-    && sudo rosdep install --from-paths . --ignore-src -r -y --rosdistro=kinetic \
-    && catkin init \
-    && catkin build \
-    && echo 'source /home/ros/catkin_ws/devel/setup.bash' >> /home/$USERNAME/.bashrc
+# Copy code into workspace
+COPY --chown=ros ./kinetic_src src
+
+# Source ROS environment and initialize workspace
+RUN source /opt/$USERNAME/$ROS_DISTRO/setup.bash \
+    && cd /home/$USERNAME/catkin_ws/src \
+    && catkin_init_workspace 
+
+# Install additional ROS packages 
+RUN sudo apt-get update \
+    && sudo apt-get install -y \
+    ros-$ROS_DISTRO-ros-control \
+    ros-$ROS_DISTRO-ros-controllers \
+    ros-$ROS_DISTRO-warehouse-ros \
+    ros-$ROS_DISTRO-soem \
+    ros-$ROS_DISTRO-socketcan-interface \
+    ros-$ROS_DISTRO-moveit \
+    ros-$ROS_DISTRO-moveit-ros-planning \
+    ros-$ROS_DISTRO-moveit-kinematics \
+    ros-$ROS_DISTRO-moveit-simple-controller-manager \
+    ros-$ROS_DISTRO-position-controllers \
+    ros-$ROS_DISTRO-moveit-fake-controller-manager \
+    ros-$ROS_DISTRO-joint-trajectory-controller \
+    ros-$ROS_DISTRO-moveit-ros-visualization \
+    ros-$ROS_DISTRO-moveit-planners-ompl \
+    ros-$ROS_DISTRO-joint-state-controller \
+    ros-$ROS_DISTRO-effort-controllers \
+    ros-$ROS_DISTRO-ur-msgs \
+    ros-$ROS_DISTRO-industrial-msgs \   
+    ros-$ROS_DISTRO-ur-client-library \
+    ros-$ROS_DISTRO-industrial-robot-status-controller \
+    && sudo rm -rf /var/lib/apt/lists/*
+RUN pip3 install pymodbus
+
+# Install dependencies and build workspace
+RUN source /opt/$USERNAME/$ROS_DISTRO/setup.bash \	
+    && cd /home/$USERNAME/catkin_ws \
+    && rosdep update \
+    && sudo rosdep install --from-paths . --ignore-src -r -y --rosdistro=$ROS_DISTRO \
+    && catkin_make 
+
+RUN sudo apt-get update \
+    && sudo apt-get upgrade \
+    && echo 'source /opt/$USERNAME/$ROS_DISTRO/setup.bash' >> /home/$USERNAME/.bashrc \
+    && echo 'source /home/$USERNAME/catkin_ws/devel/setup.bash' >> /home/$USERNAME/.bashrc
