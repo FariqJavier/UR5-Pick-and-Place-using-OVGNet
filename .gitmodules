@@ -11,19 +11,12 @@
 	path = workspace/kinetic_src/universal_robot
 	url = https://github.com/ros-industrial/universal_robot.git
 	branch = kinetic_devel
-[submodule "workspace/kinetic_src/ur_modern_driver"]
-	path = workspace/kinetic_src/ur_modern_driver
-	url = https://github.com/ros-industrial-attic/ur_modern_driver.git
-	branch = kinetic_devel
-[submodule "workspace/kinetic_src/ros_control"]
-	path = workspace/kinetic_src/ros_control
-	url = https://github.com/ros-controls/ros_control.git
 	branch = kinetic_devel
 [submodule "workspace/noetic_src/robotiq"]
 	path = workspace/noetic_src/robotiq
 	url = https://github.com/clearpathrobotics/robotiq.git
 	branch = noetic_devel
-[submodule "workspace/noetic_src/mongo-cxx-driver"]
-	path = workspace/noetic_src/mongo-cxx-driver
-	url = https://github.com/mongodb/mongo-cxx-driver.git
-	branch = 26compat
+[submodule "workspace/kinetic_src/ur_modern_driver"]
+	path = workspace/kinetic_src/ur_modern_driver
+	url = https://github.com/ros-industrial-attic/ur_modern_driver.git
+	branch = kinetic-devel
