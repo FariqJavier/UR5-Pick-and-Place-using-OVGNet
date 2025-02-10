@@ -39,7 +39,7 @@ RUN mkdir -p /home/$USERNAME/catkin_ws/src \
 WORKDIR /home/$USERNAME/catkin_ws
 
 # Copy code into workspace
-COPY --chown=ros ./noetic_src src
+COPY --chown=$USERNAME ./noetic_src src
 
 # Source ROS environment
 RUN source /opt/$USERNAME/$ROS_DISTRO/setup.bash \
@@ -63,7 +63,7 @@ RUN sudo apt-get update \
     libboost-all-dev \
     libsasl2-dev \
     && sudo rm -rf /var/lib/apt/lists/*
-RUN pip3 install pymodbus
+RUN pip3 install pymodbus==2.5.3
 
 # Install dependencies and build workspace
 RUN source /opt/$USERNAME/$ROS_DISTRO/setup.bash \
@@ -73,6 +73,6 @@ RUN source /opt/$USERNAME/$ROS_DISTRO/setup.bash \
     && catkin build 
 
 RUN sudo apt-get update \
-    && sudo apt-get upgrade \
+    && sudo apt-get upgrade -y \
     && echo 'source /opt/$USERNAME/$ROS_DISTRO/setup.bash' >> /home/$USERNAME/.bashrc \
     && echo 'source /home/$USERNAME/catkin_ws/devel/setup.bash' >> /home/$USERNAME/.bashrc

@@ -24,6 +24,7 @@ services:
        - ../data/noetic:/home/ros/data
     devices: 
        - /dev/dri:/dev/dri
+    privileged: true
 
   # kinetic:
   #   build:
@@ -49,3 +50,4 @@ services:
   #      - ../data/kinetic:/home/ros/data
   #   devices: 
   #      - /dev/dri:/dev/dri
+  #   privileged: true  
