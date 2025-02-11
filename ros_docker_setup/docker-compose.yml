@@ -12,11 +12,13 @@ services:
     network_mode: "host"           # access to host's network
     stdin_open: true               # docker run -i
     tty: true                      # docker run -t
-    environment:
-      - DISPLAY=${DISPLAY}             # Pass the display for GUI
-      - QT_X11_NO_MITSHM=1             # Needed by QT programs
-      - LIBGL_ALWAYS_SOFTWARE=1
-      - XAUTHORITY=/tmp/.docker.xauth
+    env_file:
+      - .env
+    # environment:
+    #   - DISPLAY=${DISPLAY}             # Pass the display for GUI
+    #   - QT_X11_NO_MITSHM=1             # Needed by QT programs
+    #   - LIBGL_ALWAYS_SOFTWARE=1
+    #   - XAUTHORITY=/tmp/.docker.xauth
     volumes:
        - /tmp/.X11-unix:/tmp/.X11-unix:rw
        - /tmp/.docker.xauth:/tmp/.docker.xauth:rw

@@ -32,7 +32,7 @@ RUN adduser --disabled-password --gecos '' $USERNAME \
 
 USER $USERNAME
     
-RUN echo 'export ROBOT_IP=${ROBOT_IP}' >> /home/$USERNAME/.bashrc
+RUN echo 'export ROBOT_IP=$ROBOT_IP' >> /home/$USERNAME/.bashrc
 
 RUN mkdir -p /home/$USERNAME/catkin_ws/src \
     && chown -R $USERNAME:$USERNAME /home/$USERNAME/catkin_ws
@@ -50,8 +50,9 @@ RUN source /opt/$USERNAME/$ROS_DISTRO/setup.bash \
 RUN sudo apt-get update \
     && sudo apt-get install -y \
     ros-$ROS_DISTRO-moveit \
-    ros-$ROS_DISTRO-ur-robot-driver \
-    ros-$ROS_DISTRO-ur-calibration \
+    ros-$ROS_DISTRO-ur-msgs \
+    # ros-$ROS_DISTRO-ur-robot-driver \
+    # ros-$ROS_DISTRO-ur-calibration \
     ros-$ROS_DISTRO-ros-control \
     ros-$ROS_DISTRO-ros-controllers \
     ros-$ROS_DISTRO-warehouse-ros-mongo \
