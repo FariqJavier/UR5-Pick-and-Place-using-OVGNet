@@ -1,3 +1,22 @@
-[submodule "workspace/src/universal_robot"]
-	path = workspace/src/universal_robot
+
+[submodule "workspace/noetic_src/universal_robot"]
+	path = workspace/noetic_src/universal_robot
 	url = https://github.com/ros-industrial/universal_robot.git
+	branch = noetic_devel
+[submodule "workspace/kinetic_src/robotiq"]
+	path = workspace/kinetic_src/robotiq
+	url = https://github.com/ros-industrial-attic/robotiq.git
+	branch = kinetic_devel
+[submodule "workspace/kinetic_src/universal_robot"]
+	path = workspace/kinetic_src/universal_robot
+	url = https://github.com/ros-industrial/universal_robot.git
+	branch = kinetic_devel
+	branch = kinetic_devel
+[submodule "workspace/noetic_src/robotiq"]
+	path = workspace/noetic_src/robotiq
+	url = https://github.com/clearpathrobotics/robotiq.git
+	branch = noetic_devel
+[submodule "workspace/kinetic_src/ur_modern_driver"]
+	path = workspace/kinetic_src/ur_modern_driver
+	url = https://github.com/ros-industrial-attic/ur_modern_driver.git
+	branch = kinetic-devel
