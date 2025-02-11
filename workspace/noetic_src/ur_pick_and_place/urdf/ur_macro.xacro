@@ -51,8 +51,8 @@
      - Muhammad Asif Rana
   -->
 
-  <xacro:include filename="$(find ur_description)/urdf/inc/ur_transmissions.xacro" />
-  <xacro:include filename="$(find ur_description)/urdf/inc/ur_common.xacro" />
+  <xacro:include filename="$(find ur_pick_and_place)/urdf/ur_transmissions.xacro" />
+  <xacro:include filename="$(find ur_pick_and_place)/urdf/ur_common.xacro" />
 
   <xacro:macro name="ur_robot" params="
     prefix
