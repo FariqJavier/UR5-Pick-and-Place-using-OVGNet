@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <launch>
-  <include file="$(find ur_pick_and_place)/launch/load_ur5.launch"/>
+  <include file="$(find ur_pick_and_place)/launch/ur5/load_ur5.launch"/>
 
   <node name="joint_state_publisher_gui" pkg="joint_state_publisher_gui" type="joint_state_publisher_gui" />
   <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />

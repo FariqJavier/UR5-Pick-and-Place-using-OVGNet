@@ -34,7 +34,7 @@
   <!-- Convert joint states to /tf tranforms -->
   <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
 
-  <include file="$(find ur_pick_and_place)/launch/ur_control.launch">
+  <include file="$(find ur_pick_and_place)/launch/ur5/ur_control.launch">
     <arg name="debug" value="$(arg debug)"/>
     <arg name="use_tool_communication" value="$(arg use_tool_communication)"/>
     <arg name="controller_config_file" value="$(arg controller_config_file)"/>
