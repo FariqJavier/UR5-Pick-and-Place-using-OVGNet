@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<launch>
+
+  <!-- use custom ur5 xacro macro which parameters are already filled -->
+  <param name="robot_description" command="$(find xacro)/xacro '$(find ur_pick_and_place)/urdf/ur5/custom_ur5.xacro'"/>
+
+</launch>

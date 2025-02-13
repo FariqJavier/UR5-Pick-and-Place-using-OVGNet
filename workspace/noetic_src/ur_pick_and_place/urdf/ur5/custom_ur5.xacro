@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://wiki.ros.org/xacro" name="workcell">
+  
+  <!-- import ur5 -->
+  <xacro:include filename="$(find ur_pick_and_place)/urdf/ur5/ur5_macro.xacro"/>
+
+  <!-- import robotiq 2f-85 -->
+  <xacro:include filename="$(find ur_pick_and_place)/urdf/gripper2f85/robotiq_arg2f_85_model_macro.xacro"/>
+  
+  <!-- parameters -->
+
+  <!-- ur5 -->
+  <xacro:ur5_robot prefix=""/> 
+
+  <!-- robotiq 2f-85 -->
+  <xacro:robotiq_arg2f_85 prefix=""/>
+
+
+  <joint name="eef_gripper_joint" type="fixed">
+    <parent link="wrist_3_link"/>
+    <child link="robotiq_arg2f_base_link"/>
+    <origin xyz="0 0 0" rpy="0.0 0.0 0.0"/>
+  </joint>
+
+</robot>
