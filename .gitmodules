@@ -20,3 +20,11 @@
 	path = workspace/kinetic_src/ur_modern_driver
 	url = https://github.com/ros-industrial-attic/ur_modern_driver.git
 	branch = kinetic-devel
+[submodule "workspace/noetic_src/Universal_Robots_ROS_Driver"]
+	path = workspace/noetic_src/Universal_Robots_ROS_Driver
+	url = https://github.com/UniversalRobots/Universal_Robots_ROS_Driver.git
+	branch = master
+[submodule "workspace/noetic_src/ur_msgs"]
+	path = workspace/noetic_src/ur_msgs
+	url = https://github.com/ros-industrial/ur_msgs.git
+	branch = noetic-devel
