@@ -78,5 +78,18 @@ $ roslaunch robotiq_2f_gripper_control robotiq_action_server.launch comport comp
 $ rosrun robotiq_2f_gripper_control robotiq_2f_action_client_example.py
 ```
 
+### Custom Robot with Gripper Nodes
 
+#### Launch Rviz to display custom robot model
 
+Launch custom robot bringup
+
+```sh
+$ roslaunch ur_pick_and_place custom_ur5_bringup.launch
+```
+
+Launch example rviz
+
+```sh
+$ roslaunch ur_pick_and_place example_rviz.launch
+```
