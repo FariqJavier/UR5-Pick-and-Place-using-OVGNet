@@ -69,6 +69,7 @@ RUN sudo apt-get update \
     ros-$ROS_DISTRO-industrial-msgs \   
     ros-$ROS_DISTRO-ur-client-library \
     ros-$ROS_DISTRO-industrial-robot-status-controller \
+    ros-kinetic-joint-state-publisher-gui \
     && sudo rm -rf /var/lib/apt/lists/*
 RUN pip3 install pymodbus
 
@@ -80,6 +81,6 @@ RUN source /opt/$USERNAME/$ROS_DISTRO/setup.bash \
     && catkin_make 
 
 RUN sudo apt-get update \
-    && sudo apt-get upgrade \
+    && sudo apt-get upgrade -y\
     && echo 'source /opt/$USERNAME/$ROS_DISTRO/setup.bash' >> /home/$USERNAME/.bashrc \
     && echo 'source /home/$USERNAME/catkin_ws/devel/setup.bash' >> /home/$USERNAME/.bashrc
