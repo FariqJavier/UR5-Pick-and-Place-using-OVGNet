@@ -26,17 +26,6 @@
   <arg name="ur_hardware_interface_node_required" default="true" doc="Shut down ros environment if ur_hardware_interface-node dies."/>
   <arg name="use_spline_interpolation" default="true" doc="True if splines should be used as interpolation on the robot controller when forwarding trajectory, if false movej or movel commands are used"/>
 
-  <!-- parameters on robot description has already filled by default -->
-  <!-- robot + gripper model -->
-  <include file="$(arg robot_description_file)"/>
-
-  <!-- Convert robot states to /tf tranforms -->
-  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
-
-  <!-- Convert joint states to /tf tranforms -->
-  <!-- Necessary to load gripper urdf -->
-  <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" />
-
   <include file="$(find ur_pick_and_place)/launch/ur5/ur_control.launch">
     <arg name="debug" value="$(arg debug)"/>
     <arg name="use_tool_communication" value="$(arg use_tool_communication)"/>
