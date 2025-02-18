@@ -22,7 +22,7 @@
     <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
   </joint>
 
-  <joint name="eef_gripper_joint" type="fixed">
+  <joint name="ee_gripper_joint" type="fixed">
     <parent link="flange"/>
     <child link="robotiq_arg2f_base_link"/>
     <origin xyz="0 0 0" rpy="0.0 ${pi/2} 0.0"/>

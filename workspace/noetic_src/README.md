@@ -80,6 +80,14 @@ $ rosrun robotiq_2f_gripper_control robotiq_2f_action_client_example.py
 
 ### Custom Robot with Gripper Nodes
 
+consists of 3 nodes:
+
+- custom_robot_pose = Subscribe to /tf, listen to transformed robot position. Publish to /robot_pose, calculate end-effector position (obtained from combination of transforming /base_link to /flange and transforming /flange to /robotiq_arg2f_base_link) and send it to/robot_pose
+
+- custom_robot_manipulator = Subscribe to /robot_pose. listen to end-effector position. Publish to /arm_joint_trajectory, calculate joint trajectory needed to achieve desired cartesian position through inverse kinematic or forward kinematic and send it to /arm_joint_trajectory
+
+- custom_arm_controller = Subscribe to /arm_joint_trajectory, listen to joint trajectory command. Publish to /pos_joint_traj_controller/command, transmit joint trajectory command to the topic. Also, changes can be made while executing a trajectory, allowing sudden changes in direction without having to wait until the previously specified position is reached. 
+
 #### Launch Rviz to display custom robot model
 
 Launch custom robot bringup
