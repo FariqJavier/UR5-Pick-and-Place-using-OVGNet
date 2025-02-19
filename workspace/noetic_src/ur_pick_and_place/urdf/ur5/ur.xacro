@@ -2,7 +2,7 @@
 <robot xmlns:xacro="http://wiki.ros.org/xacro" name="$(arg robot_model)_robot">
 
    <!-- import main macro -->
-   <xacro:include filename="$(find ur_pick_and_place)/urdf/ur_macro.xacro"/>
+   <xacro:include filename="$(find ur_pick_and_place)/urdf/ur5/ur_macro.xacro"/>
 
    <!-- parameters -->
    <xacro:arg name="joint_limit_params" default=""/>
