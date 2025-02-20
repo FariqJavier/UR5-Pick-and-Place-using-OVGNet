@@ -1,0 +1,11 @@
+moveit_setup_assistant_config:
+  URDF:
+    package: ur_pick_and_place
+    relative_path: urdf/ur5/custom_ur5.xacro
+    xacro_args: --inorder
+  SRDF:
+    relative_path: config/workcell.srdf
+  CONFIG:
+    author_name: Fariq Javier Nugraha
+    author_email: fariqjavier@gmail.com
+    generated_timestamp: 1740066808
