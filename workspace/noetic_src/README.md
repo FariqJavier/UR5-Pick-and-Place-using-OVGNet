@@ -88,6 +88,11 @@ consists of 3 nodes:
 
 - custom_arm_controller = Subscribe to /arm_joint_trajectory, listen to joint trajectory command. Publish to /pos_joint_traj_controller/command, transmit joint trajectory command to the topic. Also, changes can be made while executing a trajectory, allowing sudden changes in direction without having to wait until the previously specified position is reached. 
 
+configuring custom robot inverse kinematic using moveit:
+
+- UR5 (arm group) = using track ik moveit plugin
+- Robotiq 2F-85 (gripper group) = using kdl moveit plugin
+
 #### Launch Rviz to display custom robot model
 
 Launch custom robot bringup
