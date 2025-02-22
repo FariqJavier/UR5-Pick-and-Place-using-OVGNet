@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import rospy
 import tf
-from geometry_msgs.msg import Pose
+from geometry_msgs.msg import PoseStamped
 from tf.transformations import quaternion_from_euler
 
 def get_end_effector_position(listener):
@@ -18,21 +18,23 @@ def get_end_effector_position(listener):
         (trans_flange_to_gripper, quat_flange_to_gripper) = listener.lookupTransform('/flange', '/robotiq_arg2f_base_link', rospy.Time(0))
 
         # Combine the transformations to get the gripper's position relative to /base_link
-        end_effector_position = Pose()
+        end_effector_position = PoseStamped()
+        end_effector_position.header.stamp = rospy.Time.now()
+        end_effector_position.header.frame_id = "base_link"  # Reference frame
 
         # Add translation
-        end_effector_position.position.x = trans_base_to_flange[0] + trans_flange_to_gripper[0]
-        end_effector_position.position.y = trans_base_to_flange[1] + trans_flange_to_gripper[1]
-        end_effector_position.position.z = trans_base_to_flange[2] + trans_flange_to_gripper[2]
+        end_effector_position.pose.position.x = trans_base_to_flange[0] + trans_flange_to_gripper[0]
+        end_effector_position.pose.position.y = trans_base_to_flange[1] + trans_flange_to_gripper[1]
+        end_effector_position.pose.position.z = trans_base_to_flange[2] + trans_flange_to_gripper[2]
 
         # Multiply quaternions (base_to_flange * flange_to_gripper) to get the final orientation
         quat_combined = tf.transformations.quaternion_multiply(quat_base_to_flange, quat_flange_to_gripper)
 
         # Set the orientation of the end-effector
-        end_effector_position.orientation.x = quat_combined[0]
-        end_effector_position.orientation.y = quat_combined[1]
-        end_effector_position.orientation.z = quat_combined[2]
-        end_effector_position.orientation.w = quat_combined[3]
+        end_effector_position.pose.orientation.x = quat_combined[0]
+        end_effector_position.pose.orientation.y = quat_combined[1]
+        end_effector_position.pose.orientation.z = quat_combined[2]
+        end_effector_position.pose.orientation.w = quat_combined[3]
 
         return end_effector_position
     except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
@@ -47,7 +49,7 @@ if __name__ == "__main__":
     # Create a TF listener
     listener = tf.TransformListener()
     # Initialize the publisher
-    pose_pub = rospy.Publisher("/robot_pose", Pose, queue_size=10)
+    pose_pub = rospy.Publisher("/robot_pose", PoseStamped, queue_size=10)
 
     rate = rospy.Rate(10)  # 10 Hz
     while not rospy.is_shutdown():
