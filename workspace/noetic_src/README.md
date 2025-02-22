@@ -95,14 +95,32 @@ configuring custom robot inverse kinematic using moveit:
 
 #### Launch Rviz to display custom robot model
 
-Launch custom robot bringup
+Launch custom robot bringup node
 
 ```sh
 $ roslaunch ur_pick_and_place custom_ur5_bringup.launch
 ```
 
-Launch example rviz
+Launch MoveIt! Rviz
 
 ```sh
-$ roslaunch ur_pick_and_place example_rviz.launch
+$ roslaunch ur_pick_and_place moveit_rviz.launch
+```
+
+Launch MoveIt! configuration
+
+```sh
+$ roslaunch ur_pick_and_place custom_move_group.launch
+```
+
+Launch Robot_Pose node
+
+```sh
+$ rosrun ur_pick_and_place custom_robot_pose.py
+```
+
+Launch Robot_Manipulator node
+
+```sh
+$ rosrun ur_pick_and_place custom_robot_manipulator.py
 ```
