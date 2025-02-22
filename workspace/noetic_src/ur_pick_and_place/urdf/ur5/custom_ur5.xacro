@@ -15,12 +15,12 @@
   <!-- robotiq 2f-85 -->
   <xacro:robotiq_arg2f_85 prefix=""/>
 
-  <link name="world" />
+  <!-- <link name="world" />
   <joint name="world_joint" type="fixed">
     <parent link="world" />
     <child link = "base_link" />
     <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
-  </joint>
+  </joint> -->
 
   <joint name="ee_gripper_joint" type="fixed">
     <parent link="flange"/>
