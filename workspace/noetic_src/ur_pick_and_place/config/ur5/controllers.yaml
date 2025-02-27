@@ -166,7 +166,7 @@ robot_status_controller:
    publish_rate: 10
 
 controller_list:
-  - name: arm_controller
+  - name: scaled_pos_joint_traj_controller   # Use the default controller
     action_ns: follow_joint_trajectory
     default: True
     type: FollowJointTrajectory
@@ -177,9 +177,10 @@ controller_list:
       - wrist_1_joint
       - wrist_2_joint
       - wrist_3_joint
+
   - name: gripper_controller
     action_ns: follow_joint_trajectory
     default: True
     type: FollowJointTrajectory
     joints:
-      finger_joint
+      - finger_joint
