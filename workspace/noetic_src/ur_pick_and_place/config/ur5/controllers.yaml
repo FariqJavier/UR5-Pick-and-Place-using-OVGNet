@@ -178,7 +178,7 @@ controller_list:
       - wrist_2_joint
       - wrist_3_joint
 
-  - name: gripper_controller
+  - name: robotiq_controller
     action_ns: follow_joint_trajectory
     default: True
     type: FollowJointTrajectory
