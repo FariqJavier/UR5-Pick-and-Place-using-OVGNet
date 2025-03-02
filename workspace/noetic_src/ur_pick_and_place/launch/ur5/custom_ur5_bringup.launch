@@ -42,11 +42,13 @@
   <arg name="sim" default="false"/>
   <arg name="comport" default="/dev/ttyUSB0" unless="$(arg sim)"/> 
   <arg name="baud" default="115200" unless="$(arg sim)"/> 
+  <arg name="rate" default="125" doc="Frequenzy in Herz of gripper state update"/>
 
   <include file="$(find ur_pick_and_place)/launch/gripper2f85/robotiq_action_server.launch">
     <arg name="comport" value="$(arg comport)" unless="$(arg sim)"/>
     <arg name="baud" value="$(arg baud)" unless="$(arg sim)"/>
     <arg name="stroke" value="0.085"/>
+    <arg name="rate" value="$(arg rate)"/>
     <arg name="joint_name" value="finger_joint"/>
     <arg name="verbose" value="true"/>
     <arg name="sim" value="$(arg sim)"/>
