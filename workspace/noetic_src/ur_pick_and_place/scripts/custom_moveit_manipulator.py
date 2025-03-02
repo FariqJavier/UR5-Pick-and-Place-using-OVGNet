@@ -3,13 +3,19 @@ import rospy
 import moveit_commander
 import sys
 from geometry_msgs.msg import Pose
-from pynput.keyboard import Listener, Key
+from pynput.keyboard import Listener, Key,KeyCode
 
-EF_POS_STEP = 0.05  # Position increment
-EF_ANGLE_POS = 0.05  # Orientation increment
+EF_POS_STEP = 0.05  # Position increment/decrement
+EF_ANGLE_POS = 0.005  # Orientation increment/decrement
 GRIPPER_JOINT_STEP = 0.005
 
-control_msg = """
+ESCAPE_COMBS = [
+    {Key.ctrl_l, KeyCode(char='c')},
+    {Key.ctrl_r, KeyCode(char='c')}
+]
+
+
+CONTROL_MSG = """
 Control Your UR5 with MoveIt!
 ---------------------------
 Moving end-effector around:
@@ -17,7 +23,7 @@ Moving end-effector around:
    A    S    D
 
 Arm position step += 0.05
-Arm angle step += 0.05
+Arm angle step += 0.005
 
 W: Move Upward
 A: Move Leftside
@@ -29,7 +35,7 @@ SPACE KEY : force stop
 CTRL-C to quit
 """
 
-error_msg = """
+E_MSG = """
 Communications Failed
 """
 
@@ -42,76 +48,94 @@ class MoveItManipulator:
         self.arm_group = moveit_commander.MoveGroupCommander("arm")
         self.gripper_group = moveit_commander.MoveGroupCommander("gripper")
 
-        self.latest_ef_pose = None
         self.target_ef_pose = None
 
         self.target_ef_traj = None
         
-        self.latest_gripper_joint = None
         self.target_gripper_joint = None
 
-        self.get_keys()
+        self.escape_key_pressed = None
+        # self.get_keys()
 
     def get_latest_ef_pose(self):
-        self.latest_ef_pose = self.arm_group.get_current_pose().pose
-        self.target_ef_pose = self.target_ef_pose
+        return self.arm_group.get_current_pose()
 
     def get_latest_gripper_joint(self):
-        self.latest_gripper_joint = self.gripper_group.get_current_joint_values()
+        return self.gripper_group.get_current_joint_values()
 
     def set_target_ef_pose_by_teleop(self, key):
-        self.get_latest_ef_pose()
+        self.target_ef_pose = self.get_latest_ef_pose()
+
+        if key in [Key.ctrl_l, Key.ctrl_r]:  
+            self.escape_key_pressed.add(key)
+        elif key == KeyCode(char='c'):  
+            self.escape_key_pressed.add(key)
+
+        for comb in ESCAPE_COMBS:
+            if comb.issubset(self.escape_key_pressed): 
+                return False
+
+        if key == Key.esc:
+                return False
+            
+        if key == Key.up:
+            self.target_ef_pose.pose.position.z += EF_POS_STEP
+            self.plan_and_execute_pose()
+        elif key == Key.down:
+            self.target_ef_pose.pose.position.z -= EF_POS_STEP
+            self.plan_and_execute_pose()
+        elif key == Key.right:
+            self.target_ef_pose.pose.orientation.z += EF_POS_STEP
+            self.plan_and_execute_pose()
+        elif key== Key.left:
+            self.target_ef_pose.pose.orientation.z -= EF_POS_STEP
+            self.plan_and_execute_pose()
+
         try:
             if key.char == 'a':
-                self.target_ef_pose.position.y += EF_POS_STEP
+                self.target_ef_pose.pose.position.y += EF_POS_STEP
             elif key.char == 'd':
-                self.target_ef_pose.position.y -= EF_POS_STEP
+                self.target_ef_pose.pose.position.y -= EF_POS_STEP
             elif key.char == 'w':
-                self.target_ef_pose.position.x += EF_POS_STEP
+                self.target_ef_pose.pose.position.x += EF_POS_STEP
             elif key.char == 's':
-                self.target_ef_pose.position.x -= EF_POS_STEP    
-            elif key == Key.up:
-                self.target_ef_pose.position.z += EF_POS_STEP
-            elif key == Key.down:
-                self.target_ef_pose.position.z -= EF_POS_STEP
-            elif key == Key.right:
-                self.target_ef_pose.orientation.z += EF_POS_STEP
-            elif key == Key.left:
-                self.target_ef_pose.orientation.z -= EF_POS_STEP
+                self.target_ef_pose.pose.position.x -= EF_POS_STEP    
             elif key.char == 'p':
-                self.target_ef_pose.orientation.x += EF_POS_STEP
+                self.target_ef_pose.pose.orientation.x += EF_POS_STEP
             elif key.char == ';':
-                self.target_ef_pose.orientation.x -= EF_POS_STEP
+                self.target_ef_pose.pose.orientation.x -= EF_POS_STEP
             elif key.char == "'":
-                self.target_ef_pose.orientation.x += EF_POS_STEP
+                self.target_ef_pose.pose.orientation.x += EF_POS_STEP
             elif key.char == "l":
-                self.target_ef_pose.orientation.x -= EF_POS_STEP
-            
+                self.target_ef_pose.pose.orientation.x -= EF_POS_STEP
+
             self.plan_and_execute_pose()
         except AttributeError:
             pass
 
     def get_keys(self):
-        try:
-            with Listener(on_press=self.set_target_ef_pose_by_teleop) as listener:
-                print(control_msg)
+        self.escape_key_pressed = set()
+
+        with Listener(on_press=self.set_target_ef_pose_by_teleop, suppress=True) as listener:
+            try:
+                print(CONTROL_MSG)
                 listener.join()
-        except KeyboardInterrupt:
-            rospy.loginfo("Ctrl+C detected. Exiting gracefully...")
-            rospy.signal_shutdown("KeyboardInterrupt")
-            moveit_commander.roscpp_shutdown()
-            sys.exit(0)
+            finally:
+                moveit_commander.roscpp_shutdown()
 
     def plan_and_execute_pose(self):
-        if not self.target_ef_pose:
-            rospy.logwarn("No target pose set. Skipping planning and execution.")
-            return
+        # if not self.target_ef_pose:
+        #     rospy.logwarn("No target pose set. Skipping planning and execution.")
+        #     return
 
-        self.arm_group.set_pose_target(self.target_ef_pose)
-        _, self.target_ef_traj, _, _ = self.arm_group.plan()
+        # self.arm_group.set_pose_target(self.target_ef_pose)
+        self.arm_group.set_named_target("arm_ready")
+        success, self.target_ef_traj, _, _ = self.arm_group.plan()
+        print(success)
+        self.arm_group.execute(self.target_ef_traj)
         rospy.loginfo("Executed planned trajectory: %s", self.target_ef_traj)
 
 if __name__ == "__main__":
     print("MoveItManipulator script started")
-    MoveItManipulator()
-    # rospy.spin()
+    moveit_manipulator = MoveItManipulator()
+    moveit_manipulator.plan_and_execute_pose()
