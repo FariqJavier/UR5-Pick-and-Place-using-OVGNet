@@ -60,6 +60,9 @@ RUN sudo apt-get update \
     ros-$ROS_DISTRO-trac-ik \
     ros-$ROS_DISTRO-soem \
     ros-$ROS_DISTRO-socketcan-interface \
+    ros-$ROS_DISTRO-rosbridge-server \
+    ros-$ROS_DISTRO-tf2-web-republisher \
+    ros-$ROS_DISTRO-web-video-server \
     mongodb \
     libssl-dev \
     libboost-all-dev \
