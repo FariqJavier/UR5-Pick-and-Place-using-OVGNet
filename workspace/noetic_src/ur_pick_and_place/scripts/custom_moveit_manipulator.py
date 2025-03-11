@@ -19,16 +19,24 @@ CONTROL_MSG = """
 Test Control Your UR5 with MoveIt!
 ---------------------------
 Move Test end-effector around:
-        W
-   A    S    D
+
+Position Movement:
+
+        "W"  
+    "A" "S" "D"     "LeftKey"    "UpKey"    
+
+Oriental Movement:
+
+        "P"
+    "L" ";" "'"     "DownKey"    "RightKey"
 
 Arm position step +-= 0.05
 Arm angle step +-= 0.05
 Gripper Joint step +-= 0.1
 
-W: Move Arm Upward
-A: Move Arm Leftside
-S: Move Arm Downward
+W: Move Arm +X axis
+S: Move Arm -X axis
+A: Move Arm Downward
 D: Move Arm Rightside
 Left Shift: Close Gripper
 Right Shift: Right Gripper
