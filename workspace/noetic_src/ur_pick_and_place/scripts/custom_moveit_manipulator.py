@@ -68,6 +68,9 @@ class MoveItManipulator:
         self.target_gripper_joint = None
         self.target_gripper_traj = None
 
+        self.current_quarternion = None
+        self.target_quarternion = None
+
         self.escape_key_pressed = None
         self.is_move = False
         self.get_keys()
@@ -83,9 +86,10 @@ class MoveItManipulator:
         self.target_gripper_joint = self.get_latest_gripper_joint()
 
         current_orientation = self.target_ef_pose.pose.orientation
-        current_quaternion = [current_orientation.x, current_orientation.y, current_orientation.z, current_orientation.w]
+        self.current_quaternion = [current_orientation.x, current_orientation.y, current_orientation.z, current_orientation.w]
+        target_roll, target_pitch, target_yaw = euler_from_quaternion(self.current_quaternion)
 
-        target_roll, target_pitch, target_yaw = euler_from_quaternion(current_quaternion)
+        print(f"Current Euler Angles - Roll: {target_roll}, Pitch: {target_pitch}, Yaw: {target_yaw}")
 
         if key in [Key.ctrl_l, Key.ctrl_r]:  
             self.escape_key_pressed.add(key)
@@ -149,12 +153,14 @@ class MoveItManipulator:
         except AttributeError:
             pass
 
-        target_quaternion = quaternion_from_euler(target_roll, target_pitch, target_yaw)
+        print(f"Updated Euler Angles - Roll: {target_roll}, Pitch: {target_pitch}, Yaw: {target_yaw}")
 
-        self.target_ef_pose.pose.orientation.x = target_quaternion[0]
-        self.target_ef_pose.pose.orientation.y = target_quaternion[1]
-        self.target_ef_pose.pose.orientation.z = target_quaternion[2]
-        self.target_ef_pose.pose.orientation.w = target_quaternion[3]
+        self.target_quaternion = quaternion_from_euler(target_roll, target_pitch, target_yaw)
+
+        self.target_ef_pose.pose.orientation.x = self.target_quaternion[0]
+        self.target_ef_pose.pose.orientation.y = self.target_quaternion[1]
+        self.target_ef_pose.pose.orientation.z = self.target_quaternion[2]
+        self.target_ef_pose.pose.orientation.w = self.target_quaternion[3]
 
         if self.is_move:
             self.plan_and_execute_pose()
@@ -176,9 +182,12 @@ class MoveItManipulator:
         else:
             self.arm_group.set_pose_target(self.target_ef_pose)
             success, self.target_ef_traj, _, _ = self.arm_group.plan()
+            if not success:
+                rospy.logwarn("MoveIt failed to generate a valid trajectory. Stopping execution.")
+                return
             self.arm_group.execute(self.target_ef_traj)
             # rospy.loginfo("Executed arm planned trajectory: %s", self.target_ef_traj)
-            rospy.loginfo(self.target_ef_pose)
+            # rospy.loginfo(self.target_ef_pose)
 
         if not self.target_gripper_joint:
             rospy.logwarn("No arm gripper joint set. Skipping planning and execution.")
@@ -186,8 +195,11 @@ class MoveItManipulator:
         else:
             self.gripper_group.set_joint_value_target(self.target_gripper_joint)
             success, self.target_gripper_traj, _, _ = self.gripper_group.plan()
+            if not success:
+                rospy.logwarn("MoveIt failed to generate a valid trajectory. Stopping execution.")
+                return
             self.gripper_group.execute(self.target_gripper_traj)
-            rospy.loginfo("Executed gripper planned trajectory: %s", self.target_gripper_traj)
+            # rospy.loginfo("Executed gripper planned trajectory: %s", self.target_gripper_traj)
 
         # # self.arm_group.set_pose_target(self.target_ef_pose)
         # self.arm_group.set_named_target("arm_ready")
