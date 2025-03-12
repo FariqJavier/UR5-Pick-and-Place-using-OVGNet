@@ -68,7 +68,7 @@ RUN sudo apt-get update \
     libboost-all-dev \
     libsasl2-dev \
     && sudo rm -rf /var/lib/apt/lists/*
-RUN pip3 install pymodbus==2.5.3
+RUN pip3 install pymodbus==2.5.3 pynput==1.7.7
 
 # Install dependencies and build workspace
 RUN source /opt/$USERNAME/$ROS_DISTRO/setup.bash \
