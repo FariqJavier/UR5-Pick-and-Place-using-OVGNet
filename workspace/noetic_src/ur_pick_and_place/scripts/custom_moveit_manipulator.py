@@ -4,7 +4,13 @@ import moveit_commander
 import sys
 from geometry_msgs.msg import Pose
 from pynput.keyboard import Listener, Key,KeyCode
-from tf.transformations import euler_from_quaternion, quaternion_from_euler
+from tf.transformations import quaternion_multiply, quaternion_from_euler
+import numpy as np
+
+#################################################################################
+## NOT USING EULER CONVENTION SINCE IT WILL ENCOUNTER GIMBAL LOCK PROBLEM FOR PITCH AND YAW
+##################################################################################
+
 
 EF_POS_STEP = 0.05  # Position increment/decrement
 EF_ANGLE_STEP = 0.05  # Orientation increment/decrement
@@ -53,6 +59,10 @@ E_MSG = """
 Communications Failed
 """
 
+def normalize_quaternion(q):
+    """ Normalize a quaternion to ensure it stays valid """
+    norm = np.linalg.norm(q)
+    return [q[0] / norm, q[1] / norm, q[2] / norm, q[3] / norm] if norm > 0 else q
 class MoveItManipulator:
     def __init__(self):
         rospy.init_node('custom_moveit_manipulator', anonymous=True)
@@ -87,9 +97,8 @@ class MoveItManipulator:
 
         current_orientation = self.target_ef_pose.pose.orientation
         self.current_quaternion = [current_orientation.x, current_orientation.y, current_orientation.z, current_orientation.w]
-        target_roll, target_pitch, target_yaw = euler_from_quaternion(self.current_quaternion)
 
-        print(f"Current Euler Angles - Roll: {target_roll}, Pitch: {target_pitch}, Yaw: {target_yaw}")
+        delta_quat = None
 
         if key in [Key.ctrl_l, Key.ctrl_r]:  
             self.escape_key_pressed.add(key)
@@ -110,11 +119,9 @@ class MoveItManipulator:
             self.target_ef_pose.pose.position.z -= EF_POS_STEP
             self.is_move = True
         elif key == Key.right:
-            target_yaw += EF_ANGLE_STEP
-            self.is_move = True
+            delta_quat = quaternion_from_euler(EF_ANGLE_STEP, 0, 0)
         elif key== Key.left:
-            target_yaw -= EF_ANGLE_STEP
-            self.is_move = True
+            delta_quat = quaternion_from_euler(-EF_ANGLE_STEP, 0, 0)
 
         if key == Key.shift_r:
             self.target_gripper_joint[0] -= GRIPPER_JOINT_STEP
@@ -138,31 +145,34 @@ class MoveItManipulator:
                 self.target_ef_pose.pose.position.x -= EF_POS_STEP    
                 self.is_move = True
             elif key.char == 'p':
-                target_roll += EF_ANGLE_STEP 
-                self.is_move = True
+                delta_quat = quaternion_from_euler(0, 0, EF_ANGLE_STEP) 
             elif key.char == ';':
-                target_roll -= EF_ANGLE_STEP 
-                self.is_move = True
+                delta_quat = quaternion_from_euler(0, 0, -EF_ANGLE_STEP)
             elif key.char == "'":
-                target_pitch += EF_ANGLE_STEP 
-                self.is_move = True
+                delta_quat = quaternion_from_euler(0, EF_ANGLE_STEP, 0) 
             elif key.char == "l":
-                target_pitch -= EF_ANGLE_STEP
-                self.is_move = True
+                delta_quat = quaternion_from_euler(0, -EF_ANGLE_STEP, 0)
 
         except AttributeError:
             pass
 
-        print(f"Updated Euler Angles - Roll: {target_roll}, Pitch: {target_pitch}, Yaw: {target_yaw}")
+        if delta_quat is not None:
+            self.target_quaternion = quaternion_multiply(self.current_quaternion, delta_quat)
+            self.target_quaternion = normalize_quaternion(self.target_quaternion)
 
-        self.target_quaternion = quaternion_from_euler(target_roll, target_pitch, target_yaw)
+            # Apply the new quaternion to the pose
+            self.target_ef_pose.pose.orientation.x = self.target_quaternion[0]
+            self.target_ef_pose.pose.orientation.y = self.target_quaternion[1]
+            self.target_ef_pose.pose.orientation.z = self.target_quaternion[2]
+            self.target_ef_pose.pose.orientation.w = self.target_quaternion[3]
 
-        self.target_ef_pose.pose.orientation.x = self.target_quaternion[0]
-        self.target_ef_pose.pose.orientation.y = self.target_quaternion[1]
-        self.target_ef_pose.pose.orientation.z = self.target_quaternion[2]
-        self.target_ef_pose.pose.orientation.w = self.target_quaternion[3]
+            self.is_move = True
 
         if self.is_move:
+            self.target_ef_pose.pose.position.x = round(self.target_ef_pose.pose.position.x, 4)
+            self.target_ef_pose.pose.position.y = round(self.target_ef_pose.pose.position.y, 4)
+            self.target_ef_pose.pose.position.z = round(self.target_ef_pose.pose.position.z, 4)
+            
             self.plan_and_execute_pose()
 
     def get_keys(self):
@@ -187,7 +197,6 @@ class MoveItManipulator:
                 return
             self.arm_group.execute(self.target_ef_traj)
             # rospy.loginfo("Executed arm planned trajectory: %s", self.target_ef_traj)
-            # rospy.loginfo(self.target_ef_pose)
 
         if not self.target_gripper_joint:
             rospy.logwarn("No arm gripper joint set. Skipping planning and execution.")
