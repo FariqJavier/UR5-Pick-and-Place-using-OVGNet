@@ -83,7 +83,7 @@ class MoveItManipulator:
 
         self.escape_key_pressed = None
         self.is_move = False
-        self.get_keys()
+        # self.get_keys()
 
     def get_latest_ef_pose(self):
         return self.arm_group.get_current_pose()
@@ -186,38 +186,38 @@ class MoveItManipulator:
                 moveit_commander.roscpp_shutdown()
 
     def plan_and_execute_pose(self):
-        if not self.target_ef_pose:
-            rospy.logwarn("No arm target pose set. Skipping planning and execution.")
-            return
-        else:
-            self.arm_group.set_pose_target(self.target_ef_pose)
-            success, self.target_ef_traj, _, _ = self.arm_group.plan()
-            if not success:
-                rospy.logwarn("MoveIt failed to generate a valid trajectory. Stopping execution.")
-                return
-            self.arm_group.execute(self.target_ef_traj)
-            # rospy.loginfo("Executed arm planned trajectory: %s", self.target_ef_traj)
+        # if not self.target_ef_pose:
+        #     rospy.logwarn("No arm target pose set. Skipping planning and execution.")
+        #     return
+        # else:
+        #     self.arm_group.set_pose_target(self.target_ef_pose)
+        #     success, self.target_ef_traj, _, _ = self.arm_group.plan()
+        #     if not success:
+        #         rospy.logwarn("MoveIt failed to generate a valid trajectory. Stopping execution.")
+        #         return
+        #     self.arm_group.execute(self.target_ef_traj)
+        #     # rospy.loginfo("Executed arm planned trajectory: %s", self.target_ef_traj)
 
-        if not self.target_gripper_joint:
-            rospy.logwarn("No arm gripper joint set. Skipping planning and execution.")
-            return
-        else:
-            self.gripper_group.set_joint_value_target(self.target_gripper_joint)
-            success, self.target_gripper_traj, _, _ = self.gripper_group.plan()
-            if not success:
-                rospy.logwarn("MoveIt failed to generate a valid trajectory. Stopping execution.")
-                return
-            self.gripper_group.execute(self.target_gripper_traj)
-            # rospy.loginfo("Executed gripper planned trajectory: %s", self.target_gripper_traj)
+        # if not self.target_gripper_joint:
+        #     rospy.logwarn("No arm gripper joint set. Skipping planning and execution.")
+        #     return
+        # else:
+        #     self.gripper_group.set_joint_value_target(self.target_gripper_joint)
+        #     success, self.target_gripper_traj, _, _ = self.gripper_group.plan()
+        #     if not success:
+        #         rospy.logwarn("MoveIt failed to generate a valid trajectory. Stopping execution.")
+        #         return
+        #     self.gripper_group.execute(self.target_gripper_traj)
+        #     # rospy.loginfo("Executed gripper planned trajectory: %s", self.target_gripper_traj)
 
-        # # self.arm_group.set_pose_target(self.target_ef_pose)
-        # self.arm_group.set_named_target("arm_ready")
-        # success, self.target_ef_traj, _, _ = self.arm_group.plan()
-        # print(success)
-        # self.arm_group.execute(self.target_ef_traj)
-        # rospy.loginfo("Executed planned trajectory: %s", self.target_ef_traj)
+        # self.arm_group.set_pose_target(self.target_ef_pose)
+        self.arm_group.set_named_target("arm_ready")
+        success, self.target_ef_traj, _, _ = self.arm_group.plan()
+        print(success)
+        self.arm_group.execute(self.target_ef_traj)
+        rospy.loginfo("Executed planned trajectory: %s", self.target_ef_traj)
 
 if __name__ == "__main__":
     print("MoveItManipulator script started")
     moveit_manipulator = MoveItManipulator()
-    # moveit_manipulator.plan_and_execute_pose()
+    moveit_manipulator.plan_and_execute_pose()
