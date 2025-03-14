@@ -82,10 +82,9 @@ $ rosrun robotiq_2f_gripper_control robotiq_2f_action_client_example.py
 
 consists of 3 nodes:
 
-- custom_robot_pose = Subscribe to /tf, listen to transformed robot position. Publish to /robot_pose, calculate end-effector position (obtained from combination of transforming /base_link to /flange and transforming /flange to /robotiq_arg2f_base_link) and send it to /robot_pose.
-It also subscribe to /joint_states so it will publish the pose at the same time data got published on /joint_states using callback.
+- custom_ee_pose = Subscribe to /tf, listen to transformed robot position. Publish to /ee_pose, calculate end-effector position (obtained from /tf) and send it to /ee_pose.
 
-- custom_robot_manipulator = Subscribe to /robot_pose. listen to end-effector position. Publish to /arm_joint_trajectory, calculate joint trajectory needed to achieve desired cartesian position through inverse kinematic or forward kinematic and send it to /arm_joint_trajectory. It also subscribe to /joint_states to get the latest joint value to calculate inverse kinematic.
+- custom_ee_manipulator = Subscribe to /ee_pose. listen to end-effector position. Publish to /target_arm_joint, calculate target robot joint given target end-effector through Track_IK kinematic solver using solve_type=Manip1 (sqrt(det(J * J^T)) which Maximizes Manipulability that Computes Yoshikawa's manipulability index)  and send it to /target_arm_joint. It also subscribe to /joint_states to get the latest joint value to calculate inverse kinematic.
 
 - custom_arm_controller = Subscribe to /arm_joint_trajectory, listen to joint trajectory command. Publish to /pos_joint_traj_controller/command, transmit joint trajectory command to the topic. Also, changes can be made while executing a trajectory, allowing sudden changes in direction without having to wait until the previously specified position is reached. 
 
