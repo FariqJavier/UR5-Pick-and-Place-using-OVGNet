@@ -1,11 +1,8 @@
 #!/usr/bin/env python3
 import rospy
-import moveit_commander
 import tf
-import message_filters
 from trac_ik_python.trac_ik import IK
 from geometry_msgs.msg import PoseStamped
-from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from sensor_msgs.msg import JointState
 import sys, select, os
 if os.name == 'nt':
@@ -17,22 +14,19 @@ EF_POS_STEP = 0.005
 
 class RobotManipulator:
     def __init__(self):
-        moveit_commander.roscpp_initialize([])
-        rospy.init_node('custom_robot_manipulator', anonymous=True)
-        self.robot = moveit_commander.RobotCommander()
-        self.arm_group = moveit_commander.MoveGroupCommander("arm")
-        self.gripper_group = moveit_commander.MoveGroupCommander("gripper")
+        rospy.init_node('custom_ee_manipulator', anonymous=True)
 
         self.latest_arm_joint = None
         self.target_arm_joint = None
-        self.target_ef_pose = None
+        self.target_ee_pose = None
 
-        self.arm_joint_pub = rospy.Publisher("/arm_trajectory", JointTrajectory, queue_size=10)
+        self.arm_joint_pub = rospy.Publisher("/target_arm_joint", JointState, queue_size=10)
         
         self.arm_joint_sub = rospy.Subscriber("/joint_states", JointState, self.arm_joint_callback)
-        self.arm_pose_sub = rospy.Subscriber("/ee_pose", PoseStamped, self.arm_pose_callback)
+        self.ee_pose_sub = rospy.Subscriber("/ee_pose", PoseStamped, self.ee_pose_callback)
 
-        self.arm_ik_solver = IK("base_link", "flange")
+        self.arm_ik_solver = IK("base_link", "robotiq_arg2f_base_link", solve_type="Manip1")
+        
         self.arm_joint_names = [ 
             "elbow_joint",
             "shoulder_lift_joint",
@@ -53,31 +47,31 @@ class RobotManipulator:
         self.latest_arm_joint = list(msg.position)
         # rospy.loginfo("Latest arm joint: %s", self.latest_arm_joint)
     
-    def arm_pose_callback(self, msg):
-        self.target_ef_pose = msg
+    def ee_pose_callback(self, msg):
+        self.target_ee_pose = msg
         # rospy.loginfo("Latest ef pose: %s", self.target_ef_pose)
 
-    def update_arm_pose(self):
-        if not self.target_ef_pose:
+    def update_ee_pose(self):
+        if not self.target_ee_pose:
             rospy.logwarn("Invalid initial pose configuration for IK. Waiting for valid joint states.")
             return
         
         if self.key == 'a':
-            self.target_ef_pose.pose.position.y += EF_POS_STEP
+            self.target_ee_pose.pose.position.y += EF_POS_STEP
             self.is_move = True
         elif self.key == 'd':
-            self.target_ef_pose.pose.position.y -= EF_POS_STEP
+            self.target_ee_pose.pose.position.y -= EF_POS_STEP
             self.is_move = True
         elif self.key == 'w':
-            rospy.loginfo("Latest ef pose: %s", self.target_ef_pose)
-            self.target_ef_pose.pose.position.x += EF_POS_STEP
+            rospy.loginfo("Latest ef pose: %s", self.target_ee_pose)
+            self.target_ee_pose.pose.position.x += EF_POS_STEP
             self.is_move = True
         elif self.key == 's':
-            self.target_ef_pose.pose.position.x -= EF_POS_STEP    
+            self.target_ee_pose.pose.position.x -= EF_POS_STEP    
             self.is_move = True
 
         if self.is_move:
-            rospy.loginfo("Target arm pose: %s", self.target_ef_pose)
+            rospy.loginfo("Target arm pose: %s", self.target_ee_pose)
             self.update_arm_joint()
             self.is_move = False  
 
@@ -86,7 +80,7 @@ class RobotManipulator:
             rospy.logwarn("Invalid initial joint configuration for IK. Waiting for valid joint states.")
             return
         
-        if not self.target_ef_pose:
+        if not self.target_ee_pose:
             rospy.logwarn("Invalid initial pose configuration for IK. Waiting for valid end-effector pose.")
             return
 
@@ -94,8 +88,8 @@ class RobotManipulator:
         for attempt in range(retries):
             sol = self.arm_ik_solver.get_ik(
                 self.latest_arm_joint,
-                self.target_ef_pose.pose.position.x, self.target_ef_pose.pose.position.y, self.target_ef_pose.pose.position.z,
-                self.target_ef_pose.pose.orientation.x, self.target_ef_pose.pose.orientation.y, self.target_ef_pose.pose.orientation.z, self.target_ef_pose.pose.orientation.w
+                self.target_ee_pose.pose.position.x, self.target_ee_pose.pose.position.y, self.target_ee_pose.pose.position.z,
+                self.target_ee_pose.pose.orientation.x, self.target_ee_pose.pose.orientation.y, self.target_ee_pose.pose.orientation.z, self.target_ee_pose.pose.orientation.w,
             )
 
             if sol:
@@ -110,21 +104,12 @@ class RobotManipulator:
             rospy.logerr(f"Target Pose: {self.target_ef_pose.pose}")
             return
     
-    def create_arm_traj_msg(self):
-        traj_msg = JointTrajectory()
-        traj_msg.joint_names = self.arm_joint_names
-
-        point = JointTrajectoryPoint()
-        point.positions = self.target_arm_joint
-        # point.velocities = [0.0] * len(self.arm_joint_names)
-        # point.accelerations = [0.0] * len(self.arm_joint_names)
-        point.time_from_start = rospy.Duration(1.0)
-
-        traj_msg.points.append(point)
-        traj_msg.header.stamp = rospy.Time.now()
-        traj_msg.header.frame_id = "base_link"
-
-        return traj_msg
+    def create_arm_joint_msg(self):
+        joint_msg = JointState()
+        joint_msg.header.stamp = rospy.Time.now()
+        joint_msg.name = self.arm_joint_names
+        joint_msg.position = self.target_arm_joint   
+        return joint_msg
 
     def get_key(self):
         if os.name == 'nt':  # Windows
@@ -153,15 +138,17 @@ class RobotManipulator:
             rospy.logwarn("No valid trajectory to publish")
             return
         
-        traj_msg = self.create_arm_traj_msg()
-        self.arm_group.set_joint_value_target(self.target_arm_joint)
-        success, plan, _, _ = self.arm_group.plan()
+        joint_msg = self.create_arm_joint_msg()
+        self.arm_joint_pub.publish(joint_msg)
 
-        if success:
-            self.arm_group.execute(plan, wait=True)
-            rospy.loginfo("Executed trajectory using MoveIt!")
-        else:
-            rospy.logwarn("Failed to generate a valid plan.")
+        # self.arm_group.set_joint_value_target(self.target_arm_joint)
+        # success, plan, _, _ = self.arm_group.plan()
+
+        # if success:
+        #     self.arm_group.execute(plan, wait=True)
+        #     rospy.loginfo("Executed trajectory using MoveIt!")
+        # else:
+        #     rospy.logwarn("Failed to generate a valid plan.")
 
 if __name__ == '__main__':
     print("RobotManipulator script started")
@@ -170,12 +157,11 @@ if __name__ == '__main__':
         while not rospy.is_shutdown():
             robot_manipulator.get_key()
             if robot_manipulator.key:
-                robot_manipulator.update_arm_pose()
+                robot_manipulator.update_ee_pose()
             if robot_manipulator.key == '\x03':
                 break
     except KeyboardInterrupt:
         print("\nExiting gracefully...")
         if os.name != 'nt':  # Restore terminal settings on Linux/macOS
             termios.tcsetattr(sys.stdin, termios.TCSADRAIN, termios.tcgetattr(sys.stdin))
-        moveit_commander.roscpp_shutdown()
         sys.exit(0)

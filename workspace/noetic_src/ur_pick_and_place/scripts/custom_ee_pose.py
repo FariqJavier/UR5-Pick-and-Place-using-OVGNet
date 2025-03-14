@@ -5,7 +5,7 @@ from geometry_msgs.msg import PoseStamped
 
 class RobotPose:
     def __init__(self):
-        rospy.init_node('custom_robot_pose', anonymous=True)
+        rospy.init_node('custom_ee_pose', anonymous=True)
         self.listener = tf.TransformListener()
         self.pose_pub = rospy.Publisher("/ee_pose", PoseStamped, queue_size=10)
 
