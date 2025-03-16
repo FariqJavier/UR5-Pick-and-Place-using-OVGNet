@@ -25,7 +25,7 @@ class RobotManipulator:
         self.arm_joint_sub = rospy.Subscriber("/joint_states", JointState, self.arm_joint_callback)
         self.ee_pose_sub = rospy.Subscriber("/ee_pose", PoseStamped, self.ee_pose_callback)
 
-        self.arm_ik_solver = IK("base_link", "robotiq_arg2f_base_link", solve_type="Manip1")
+        self.arm_ik_solver = IK("base_link", "robotiq_arg2f_base_link", solve_type="Manipulation1")
         
         self.arm_joint_names = [ 
             "elbow_joint",
