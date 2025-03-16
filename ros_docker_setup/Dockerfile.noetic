@@ -77,6 +77,11 @@ RUN source /opt/$USERNAME/$ROS_DISTRO/setup.bash \
     && rosdep install --from-paths . --ignore-src -r -y --rosdistro=$ROS_DISTRO \
     && catkin build 
 
+RUN sudo apt-get install -y software-properties-common \
+    && sudo add-apt-repository ppa:pypy/ppa \
+    && sudo apt-get update \
+    && sudo apt install -y pypy3 
+
 RUN sudo apt-get update \
     && sudo apt-get upgrade -y \
     && echo 'source /opt/$USERNAME/$ROS_DISTRO/setup.bash' >> /home/$USERNAME/.bashrc \
