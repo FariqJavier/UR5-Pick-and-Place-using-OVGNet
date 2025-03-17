@@ -50,6 +50,7 @@ RUN source /opt/$USERNAME/$ROS_DISTRO/setup.bash \
 RUN sudo apt-get update \
     && sudo apt-get install -y \
     ros-$ROS_DISTRO-moveit \
+    ros-$ROS_DISTRO-kdl-parser-py \
     # ros-$ROS_DISTRO-ur-msgs \
     ros-$ROS_DISTRO-industrial-robot-status-interface \
     # ros-$ROS_DISTRO-ur-robot-driver \
