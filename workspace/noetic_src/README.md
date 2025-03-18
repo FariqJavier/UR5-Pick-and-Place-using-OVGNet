@@ -93,13 +93,15 @@ configuring custom robot inverse kinematic using moveit:
 - UR5 (arm group) = using track ik moveit plugin
 - Robotiq 2F-85 (gripper group) = using kdl moveit plugin
 
-#### Launch Rviz to display custom robot model
+####  Move Robot using MoveIt!
 
 Launch custom robot bringup node
 
 ```sh
 $ roslaunch ur_pick_and_place custom_ur5_bringup.launch
 ```
+
+In Order for robot UR5 to be able ro receive external command from ROS, ensure that the UR5 robot is in ON state then make sure to run the program that has external command enable
 
 Launch MoveIt! Rviz
 
@@ -113,14 +115,8 @@ Launch MoveIt! configuration
 $ roslaunch ur_pick_and_place custom_move_group.launch
 ```
 
-Launch Robot_Pose node
+Launch Custom Moveit Manipulator Node
 
 ```sh
-$ rosrun ur_pick_and_place custom_robot_pose.py
-```
-
-Launch Robot_Manipulator node
-
-```sh
-$ rosrun ur_pick_and_place custom_robot_manipulator.py
+$ rosrun ur_pick_and_place custom_moveit_manipulator.py
 ```
