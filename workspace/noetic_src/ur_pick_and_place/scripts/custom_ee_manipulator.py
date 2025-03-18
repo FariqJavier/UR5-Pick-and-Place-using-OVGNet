@@ -6,17 +6,15 @@ import random
 from trac_ik_python.trac_ik import IK
 from geometry_msgs.msg import PoseStamped
 from sensor_msgs.msg import JointState
+from tf.transformations import quaternion_multiply, quaternion_from_euler
 import sys, select, os
 if os.name == 'nt':
   import msvcrt, time
 else:
   import tty, termios
 
-EF_POS_STEP = 0.01 
-ARROW_UP = '\x1b[A'
-ARROW_DOWN = '\x1b[B'
-ARROW_RIGHT = '\x1b[C'
-ARROW_LEFT = '\x1b[D'
+EE_POS_STEP = 0.01 
+EE_ANGLE_STEP = 0.01
 
 class RobotManipulator:
     def __init__(self):
@@ -85,44 +83,54 @@ class RobotManipulator:
         if not self.target_ee_pose:
             rospy.logwarn("Invalid initial pose configuration for IK. Waiting for valid joint states.")
             return
+        
+        current_orientation = self.target_ee_pose.pose.orientation
+        self.current_quaternion = [current_orientation.x, current_orientation.y, current_orientation.z, current_orientation.w]
+
+        delta_quat = None
 
         if self.key == 'a':
-            self.target_ee_pose.pose.position.y += EF_POS_STEP
+            self.target_ee_pose.pose.position.y += EE_POS_STEP
             self.is_move = True
         elif self.key == 'd':
-            self.target_ee_pose.pose.position.y -= EF_POS_STEP
+            self.target_ee_pose.pose.position.y -= EE_POS_STEP
             self.is_move = True
         elif self.key == 'w':
-            self.target_ee_pose.pose.position.x += EF_POS_STEP
+            self.target_ee_pose.pose.position.x += EE_POS_STEP
             self.is_move = True
         elif self.key == 's':
-            self.target_ee_pose.pose.position.x -= EF_POS_STEP    
+            self.target_ee_pose.pose.position.x -= EE_POS_STEP    
             self.is_move = True
         elif self.key == 'q':
-            self.target_ee_pose.pose.position.z += EF_POS_STEP
+            self.target_ee_pose.pose.position.z += EE_POS_STEP
             self.is_move = True
         elif self.key == 'e':
-            self.target_ee_pose.pose.position.z -= EF_POS_STEP
+            self.target_ee_pose.pose.position.z -= EE_POS_STEP
             self.is_move = True
 
-        # if self.key == 'p':
-        #     self.target_ee_pose.pose.orientation.x += EF_POS_STEP
-        #     self.is_move = True
-        # elif self.key == ';':
-        #     self.target_ee_pose.pose.orientation.x -= EF_POS_STEP
-        #     self.is_move = True
-        # elif self.key == 'l':
-        #     self.target_ee_pose.pose.orientation.y += EF_POS_STEP
-        #     self.is_move = True
-        # elif self.key == 'j':
-        #     self.target_ee_pose.pose.orientation.y -= EF_POS_STEP
-        #     self.is_move = True
-        # elif self.key == 'i':
-        #     self.target_ee_pose.pose.orientation.z += EF_POS_STEP
-        #     self.is_move = True
-        # elif self.key == 'k':
-        #     self.target_ee_pose.pose.orientation.z -= EF_POS_STEP
-        #     self.is_move = True
+        if self.key == 'p':
+            delta_quat = quaternion_from_euler(0, 0, EE_ANGLE_STEP) 
+        elif self.key == ';':
+            delta_quat = quaternion_from_euler(0, 0, -EE_ANGLE_STEP)
+        elif self.key == "'":
+            delta_quat = quaternion_from_euler(0, EE_ANGLE_STEP, 0)
+        elif self.key == 'l':
+            delta_quat = quaternion_from_euler(0, -EE_ANGLE_STEP, 0)
+        elif self.key == 'o':
+            delta_quat = quaternion_from_euler(EE_ANGLE_STEP, 0, 0)
+        elif self.key == "[":
+            delta_quat = quaternion_from_euler(-EE_ANGLE_STEP, 0, 0)
+
+        if delta_quat is not None:
+            self.target_quaternion = quaternion_multiply(self.current_quaternion, delta_quat)
+
+            # Apply the new quaternion to the pose
+            self.target_ee_pose.pose.orientation.x = self.target_quaternion[0]
+            self.target_ee_pose.pose.orientation.y = self.target_quaternion[1]
+            self.target_ee_pose.pose.orientation.z = self.target_quaternion[2]
+            self.target_ee_pose.pose.orientation.w = self.target_quaternion[3]
+
+            self.is_move = True
 
         if self.is_move:
             self.update_arm_joint()
