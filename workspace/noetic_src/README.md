@@ -120,3 +120,11 @@ Launch Custom Moveit Manipulator Node
 ```sh
 $ rosrun ur_pick_and_place custom_moveit_manipulator.py
 ```
+
+####  Run Intel RealSense SDK 2.0
+
+For testing if camera is connected or not
+
+```sh
+$ sudo realsense-viewer
+```
