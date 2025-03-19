@@ -28,6 +28,45 @@
 - Robotiq 2F-85 (gripper group): 3 pose: gripper open, gripper_small_close for grabing smaller object, gripper_big_close for grabing bigger object
 - Using FollowJointTrajectory controller for both arm and gripper
 
+# DOCUMENTATION INTEL REALSENSE CALIBRATION
+
+***STEREO***
+
+Setting 1
+Resolution: 848 x 480 (max)
+FPS: 90 (max)
+Depth Stream: Z16
+Infrared 1 Stream: Y8 (optional)
+Infrared 2 Stream: Y8 (optional)
+Emitter: Laser
+Exposure Mode: Regular
+Post Processing: Enabled (default)
+
+Setting 2
+Resolution: 1280 x 720 (max)
+FPS: 15 (max)
+Depth Stream: Z16
+Infrared 1 Stream: Y8 (optional)
+Infrared 2 Stream: Y8 (optional)
+Emitter: Laser
+Exposure Mode: Regular
+Post Processing: Enabled (default)
+
+***RGB Camera***
+
+Setting 1
+Resolution: 848 x 480 (max)
+FPS: 60 (max)
+Color: RGB8
+Exposure Mode: Auto
+Post Processing: Enabled (default)
+
+Setting 2
+Resolution: 1280 x 720 (max)
+FPS: 30 (max)
+Color: RGB8
+Exposure Mode: Auto
+Post Processing: Enabled (default)
 
 # PROBLEM
 
