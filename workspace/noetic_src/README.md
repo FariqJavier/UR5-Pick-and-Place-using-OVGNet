@@ -128,3 +128,17 @@ For testing if camera is connected or not
 ```sh
 $ sudo realsense-viewer
 ```
+
+Or run as ROOT user on the container
+
+```sh
+$ docker exec -ti --user root ros_noetic bash
+```
+
+```sh
+$ realsense-viewer
+```
+
+```sh
+$ roslaunch realsense2_camera rs_camera.launch
+```
