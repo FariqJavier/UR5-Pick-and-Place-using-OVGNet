@@ -103,6 +103,10 @@ RUN sudo mkdir -p /etc/apt/keyrings \
     && sudo apt-get update \
     && sudo apt-get upgrade
 
+# Configure User access to realsense devices
+RUN sudo usermod -a -G video $USERNAME \
+    && newgrp video
+
 RUN sudo apt-get update \
     && sudo apt-get upgrade -y \
     && echo 'source /opt/$USERNAME/$ROS_DISTRO/setup.bash' >> /home/$USERNAME/.bashrc \
