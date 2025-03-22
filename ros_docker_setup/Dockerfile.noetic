@@ -71,6 +71,20 @@ RUN sudo apt-get update \
     && sudo rm -rf /var/lib/apt/lists/*
 RUN pip3 install pymodbus==2.5.3 pynput==1.7.7
 
+# Install latest pypy3 to avoid ompl==1.5.2 missmatch pypy3 error
+RUN sudo apt-get update \
+    && sudo apt-get install -y software-properties-common \
+    && sudo add-apt-repository ppa:pypy/ppa \
+    && sudo apt-get update \
+    && sudo apt-get install -y pypy3 
+
+# Install OMPL 1.5.2 and Ruckig 0.14.0
+RUN cd /home/$USERNAME/catkin_ws/src/ompl-1.5.2 \
+    && cp install-ompl-ubuntu.sh.in install-ompl-ubuntu.sh \
+    && chmod +x install-ompl-ubuntu.sh \
+    && ./install-ompl-ubuntu.sh.in --python \
+    && pip3 install ruckig==0.14.0
+
 # Install dependencies and build workspace
 RUN source /opt/$USERNAME/$ROS_DISTRO/setup.bash \
     && sudo apt-get update \
@@ -78,34 +92,40 @@ RUN source /opt/$USERNAME/$ROS_DISTRO/setup.bash \
     && rosdep install --from-paths . --ignore-src -r -y --rosdistro=$ROS_DISTRO \
     && catkin build 
 
-# Install latest pypy3 to avoid ompl==1.5.2 missmatch pypy3 error
-RUN sudo apt-get install -y software-properties-common \
-    && sudo add-apt-repository ppa:pypy/ppa \
-    && sudo apt-get update \
-    && sudo apt install -y pypy3 
+# # Install IntelRealsense SDK 2.0 with InterRealsense Viewer
+# # Reconnect the Intel RealSense depth camera and run: realsense-viewer to verify the installation.
+# RUN sudo mkdir -p /etc/apt/keyrings \
+#     && curl -sSf https://librealsense.intel.com/Debian/librealsense.pgp | sudo tee /etc/apt/keyrings/librealsense.pgp > /dev/null \
+#     && sudo apt-get install apt-transport-https \
+#     && echo "deb [signed-by=/etc/apt/keyrings/librealsense.pgp] https://librealsense.intel.com/Debian/apt-repo `lsb_release -cs` main" | \
+#     && sudo tee /etc/apt/sources.list.d/librealsense.list \
+#     && sudo apt-get update \
+#     # && sudo apt-get install ros-$ROS_DISTRO-realsense2-camera \
+#     # && sudo apt-get install ros-$ROS_DISTRO-realsense2-description \
+#     # && sudo apt-get install librealsense2-dkms \
+#     && sudo apt-get install librealsense2-utils \
+#     # Optionally install the developer and debug packages:
+#     # With dev package installed, you can compile an application with librealsense using g++ -std=c++11 filename.cpp -lrealsense2 or an IDE of your choice.
+#     && sudo apt-get install librealsense2-dev \
+#     && sudo apt-get install librealsense2-dbg \
+#     && sudo apt-get update \
+#     && sudo apt-get upgrade
 
-# Install IntelRealsense SDK 2.0 with InterRealsense Viewer
-# Reconnect the Intel RealSense depth camera and run: realsense-viewer to verify the installation.
 RUN sudo mkdir -p /etc/apt/keyrings \
     && curl -sSf https://librealsense.intel.com/Debian/librealsense.pgp | sudo tee /etc/apt/keyrings/librealsense.pgp > /dev/null \
-    && sudo apt-get install apt-transport-https \
-    && echo "deb [signed-by=/etc/apt/keyrings/librealsense.pgp] https://librealsense.intel.com/Debian/apt-repo `lsb_release -cs` main" | \
-    && sudo tee /etc/apt/sources.list.d/librealsense.list \
-    && sudo apt-get update \
-    # && sudo apt-get install ros-$ROS_DISTRO-realsense2-camera \
-    # && sudo apt-get install ros-$ROS_DISTRO-realsense2-description \
-    && sudo apt-get install librealsense2-dkms \
-    && sudo apt-get install librealsense2-utils \
-    # Optionally install the developer and debug packages:
-    # With dev package installed, you can compile an application with librealsense using g++ -std=c++11 filename.cpp -lrealsense2 or an IDE of your choice.
-    && sudo apt-get install librealsense2-dev \
-    && sudo apt-get install librealsense2-dbg \
-    && sudo apt-get update \
-    && sudo apt-get upgrade
+    && sudo apt-get install -y apt-transport-https \
+    && echo "deb [signed-by=/etc/apt/keyrings/librealsense.pgp] https://librealsense.intel.com/Debian/apt-repo `lsb_release -cs` main" | sudo tee /etc/apt/sources.list.d/librealsense.list
+    && sudo apt-get update
+    && sudo apt-get install -y \
+        usbutils
+        librealsense2-utils \
+        librealsense2-dev \
+        librealsense2-dbg \
+    && sudo apt-get upgrade -y \
+    && sudo rm -rf /var/lib/apt/lists/*
 
 # Configure User access to realsense devices
-RUN sudo usermod -a -G video $USERNAME \
-    && newgrp video
+RUN sudo usermod -a -G video $USERNAME
 
 RUN sudo apt-get update \
     && sudo apt-get upgrade -y \
