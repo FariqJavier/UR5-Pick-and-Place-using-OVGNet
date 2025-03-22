@@ -133,6 +133,7 @@ Or run as ROOT user on the container
 
 ```sh
 $ docker exec -ti --user root ros_noetic bash
+$ source devel/setup.bash
 ```
 
 ```sh
