@@ -127,6 +127,14 @@ RUN sudo mkdir -p /etc/apt/keyrings \
 # Configure User access to realsense devices
 RUN sudo usermod -a -G video $USERNAME
 
+# Install GraspNet API
+RUN pip3 install pillow==9.1.0 \
+    && pip3 install torch torchvision torchaudio \
+    # && pip3 install torch==1.8.1+cu111 torchvision==0.9.1+cu111 torchaudio==0.8.1 -f https://download.pytorch.org/whl/torch_stable.html \
+    # && pip3 install open3d==0.12.0 \
+    # && pip3 install trimesh==3.9.0 \
+    && pip3 install graspnetAPI
+
 RUN sudo apt-get update \
     && sudo apt-get upgrade -y \
     && echo 'source /opt/$USERNAME/$ROS_DISTRO/setup.bash' >> /home/$USERNAME/.bashrc \
