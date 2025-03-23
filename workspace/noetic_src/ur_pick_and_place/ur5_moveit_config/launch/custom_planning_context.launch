@@ -13,7 +13,7 @@
 
   <!-- Load updated joint limits (override information from URDF) -->
   <group ns="$(arg robot_description)_planning">
-    <rosparam command="load" file="$(find ur_pick_and_place)/config/ur5/joint_limits.yaml"/>
+    <rosparam command="load" file="$(find ur_pick_and_place)/config/ur5/joint_limits_moveit.yaml"/>
     <rosparam command="load" file="$(find ur_pick_and_place)/config/ur5/cartesian_limits.yaml"/>
   </group>
 
