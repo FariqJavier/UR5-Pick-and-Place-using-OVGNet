@@ -143,3 +143,9 @@ $ realsense-viewer
 ```sh
 $ roslaunch realsense2_camera rs_camera.launch
 ```
+
+Display the visalization on Rviz
+
+```sh
+$ rviz
+```
