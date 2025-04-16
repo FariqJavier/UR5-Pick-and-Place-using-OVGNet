@@ -92,41 +92,6 @@ RUN source /opt/$USERNAME/$ROS_DISTRO/setup.bash \
     && rosdep install --from-paths . --ignore-src -r -y --rosdistro=$ROS_DISTRO \
     && catkin build 
 
-# # Install IntelRealsense SDK 2.0 with InterRealsense Viewer
-# # Reconnect the Intel RealSense depth camera and run: realsense-viewer to verify the installation.
-# RUN sudo mkdir -p /etc/apt/keyrings \
-#     && curl -sSf https://librealsense.intel.com/Debian/librealsense.pgp | sudo tee /etc/apt/keyrings/librealsense.pgp > /dev/null \
-#     && sudo apt-get install apt-transport-https \
-#     && echo "deb [signed-by=/etc/apt/keyrings/librealsense.pgp] https://librealsense.intel.com/Debian/apt-repo `lsb_release -cs` main" | \
-#     && sudo tee /etc/apt/sources.list.d/librealsense.list \
-#     && sudo apt-get update \
-#     # && sudo apt-get install ros-$ROS_DISTRO-realsense2-camera \
-#     # && sudo apt-get install ros-$ROS_DISTRO-realsense2-description \
-#     # && sudo apt-get install librealsense2-dkms \
-#     && sudo apt-get install librealsense2-utils \
-#     # Optionally install the developer and debug packages:
-#     # With dev package installed, you can compile an application with librealsense using g++ -std=c++11 filename.cpp -lrealsense2 or an IDE of your choice.
-#     && sudo apt-get install librealsense2-dev \
-#     && sudo apt-get install librealsense2-dbg \
-#     && sudo apt-get update \
-#     && sudo apt-get upgrade
-
-RUN sudo mkdir -p /etc/apt/keyrings \
-    && curl -sSf https://librealsense.intel.com/Debian/librealsense.pgp | sudo tee /etc/apt/keyrings/librealsense.pgp > /dev/null \
-    && sudo apt-get install -y apt-transport-https \
-    && echo "deb [signed-by=/etc/apt/keyrings/librealsense.pgp] https://librealsense.intel.com/Debian/apt-repo `lsb_release -cs` main" | sudo tee /etc/apt/sources.list.d/librealsense.list \
-    && sudo apt-get update \
-    && sudo apt-get install -y \
-        usbutils \
-        librealsense2-utils \
-        librealsense2-dev \
-        librealsense2-dbg \
-    && sudo apt-get upgrade -y \
-    && sudo rm -rf /var/lib/apt/lists/*
-
-# Configure User access to realsense devices
-RUN sudo usermod -a -G video $USERNAME
-
 # Install GraspNet API
 RUN pip3 install pillow==9.1.0 \
     && pip3 install torch torchvision torchaudio \
