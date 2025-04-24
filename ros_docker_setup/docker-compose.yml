@@ -15,11 +15,6 @@ services:
     tty: true                      # docker run -t
     env_file:
       - .env.noetic
-    # environment:
-    #   - DISPLAY=${DISPLAY}             # Pass the display for GUI
-    #   - QT_X11_NO_MITSHM=1             # Needed by QT programs
-    #   - LIBGL_ALWAYS_SOFTWARE=1
-    #   - XAUTHORITY=/tmp/.docker.xauth
     volumes:
        - /tmp/.X11-unix:/tmp/.X11-unix:rw
        - /tmp/.docker.xauth:/tmp/.docker.xauth:rw
@@ -28,15 +23,15 @@ services:
        - /dev:/dev
     devices: 
        - /dev/dri:/dev/dri
-       - /dev/video0:/dev/video0
-       - /dev/video1:/dev/video1
-       - /dev/video2:/dev/video2
-       - /dev/video3:/dev/video3
-       - /dev/video4:/dev/video4
-       - /dev/video5:/dev/video5
-       - /dev/video6:/dev/video6
-       - /dev/video7:/dev/video7
-       - /dev/bus/usb:/dev/bus/usb
+      #  - /dev/video0:/dev/video0
+      #  - /dev/video1:/dev/video1
+      #  - /dev/video2:/dev/video2
+      #  - /dev/video3:/dev/video3
+      #  - /dev/video4:/dev/video4
+      #  - /dev/video5:/dev/video5
+      #  - /dev/video6:/dev/video6
+      #  - /dev/video7:/dev/video7
+      #  - /dev/bus/usb:/dev/bus/usb
     privileged: true
 
   # kinetic:

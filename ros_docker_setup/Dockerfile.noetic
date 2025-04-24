@@ -55,14 +55,7 @@ RUN sudo apt-get update \
     ros-$ROS_DISTRO-industrial-robot-status-interface \
     # ros-$ROS_DISTRO-ur-robot-driver \
     # ros-$ROS_DISTRO-ur-calibration \
-    ros-$ROS_DISTRO-ros-control \
-    ros-$ROS_DISTRO-ros-controllers \
-    ros-$ROS_DISTRO-warehouse-ros-mongo \
-    ros-$ROS_DISTRO-trac-ik \
-    ros-$ROS_DISTRO-soem \
-    ros-$ROS_DISTRO-socketcan-interface \
-    ros-$ROS_DISTRO-rosbridge-server \
-    ros-$ROS_DISTRO-tf2-web-republisher \
+    ros-$ROS_DISTRO-ros-co/home/b401/Fariq/UR-OVGNet-ROS/workspace/noetic_src/groundingdino-ros/src/groundingdino/models/registry.pyb-republisher \
     ros-$ROS_DISTRO-web-video-server \
     mongodb \
     libssl-dev \
@@ -91,14 +84,6 @@ RUN source /opt/$USERNAME/$ROS_DISTRO/setup.bash \
     && rosdep update \
     && rosdep install --from-paths . --ignore-src -r -y --rosdistro=$ROS_DISTRO \
     && catkin build 
-
-# Install GraspNet API
-RUN pip3 install pillow==9.1.0 \
-    && pip3 install torch torchvision torchaudio \
-    # && pip3 install torch==1.8.1+cu111 torchvision==0.9.1+cu111 torchaudio==0.8.1 -f https://download.pytorch.org/whl/torch_stable.html \
-    # && pip3 install open3d==0.12.0 \
-    # && pip3 install trimesh==3.9.0 \
-    && pip3 install graspnetAPI
 
 RUN sudo apt-get update \
     && sudo apt-get upgrade -y \
