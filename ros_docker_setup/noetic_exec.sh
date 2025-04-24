@@ -2,4 +2,4 @@
 
 xhost +local:docker
 
-docker exec -it ros_noetic bash
+sudo docker exec -it ros_noetic bash
