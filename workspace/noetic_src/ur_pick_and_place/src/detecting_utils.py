@@ -3,10 +3,12 @@ import rospy
 import copy
 from typing import List, Union
     
-def generate_movement_sequence(
+# JOINT SPACE INTERPOLATION APPROACH    
+def generate_joint_space_centered_motion(
         sequence_center, 
         num_elements, 
-        shoulder_pan_joint_interval, 
+        shoulder_pan_joint_interval,
+        wrist_2_interval, 
         wrist_3_interval
     ) -> List[List[Union[int, float]]]:
     """
@@ -16,10 +18,11 @@ def generate_movement_sequence(
         sequence_center (list): The center value for the sequence.
         num_elements (int): The number of elements in the sequence.
         shoulder_pan_joint_interval (float): The interval for the shoulder pan joint.
+        wrist_2_interval (float): The interval for the wrist 2 joint.
         wrist_3_interval (float): The interval for the wrist 3 joint.
 
     returns:
-        List[List[Union[int, float]]]: A list of lists representing the movement sequence.
+        List[List[Union[int, float]]]: A list of lists representing the motion sequence.
         Returns an empty list if num_elements is non-positive.
         Returns a list with only the center element if num_elements is 1.
     """
@@ -27,7 +30,7 @@ def generate_movement_sequence(
     try:
         # Check if the sequence center is a list
         if not isinstance(sequence_center, (list)):
-            raise ValueError("sequence_center must be a list or tuple")
+            raise ValueError("sequence_center must be a list")
         
         # Check if the sequence center is a list of numbers
         if not all(isinstance(x, (int, float)) for x in sequence_center):
@@ -41,8 +44,8 @@ def generate_movement_sequence(
         if num_elements <= 0:
             raise ValueError("num_elements must be a positive integer")
     
-        rospy.loginfo("Generating movement sequence with center: %s, num_elements: %d", sequence_center, num_elements)
-        rospy.loginfo("Shoulder pan joint interval: %f, Wrist 3 interval: %f", shoulder_pan_joint_interval, wrist_3_interval)
+        rospy.loginfo("Generating motion sequence with center: %s, num_elements: %d", sequence_center, num_elements)
+        rospy.loginfo("Shoulder pan joint interval: %f, Wrist 2 interval: %f, Wrist 3 interval: %f", shoulder_pan_joint_interval, wrist_2_interval, wrist_3_interval)
 
         if num_elements <= 0:
             return []
@@ -52,19 +55,22 @@ def generate_movement_sequence(
         # Initialize movement sequence
         sequence = []
             
-        # Calculate the start value of the shoulder pan joint and wrist 3 joint
+        # Calculate the start value of the shoulder pan joint, wrist 2 joint, and wrist 3 joint
         start_sequence = copy.deepcopy(sequence_center)
         start_sequence[0] = sequence_center[0] - (shoulder_pan_joint_interval * (num_elements - 1)) / 2
-        start_sequence[-1] = sequence_center[-1] - (wrist_3_interval * (num_elements - 1)) / 2
+        start_sequence[4] = sequence_center[4] + (shoulder_pan_joint_interval * (num_elements - 1)) / 2
+        start_sequence[5] = sequence_center[5] + (wrist_3_interval * (num_elements - 1)) / 2
         sequence.append(start_sequence)
 
         for i in range(1, num_elements):
             next_sequence = copy.deepcopy(sequence[i-1])
             next_sequence[0] += shoulder_pan_joint_interval
-            next_sequence[-1] += wrist_3_interval
+            next_sequence[4] -= wrist_2_interval
+            next_sequence[5] -= wrist_3_interval
             sequence.append(next_sequence)
 
         return sequence
     except Exception as e:
-        rospy.logerr("Error generating movement sequence: %s", str(e))
+        rospy.logerr("Error generating motion sequence: %s", str(e))
         return []
+    
