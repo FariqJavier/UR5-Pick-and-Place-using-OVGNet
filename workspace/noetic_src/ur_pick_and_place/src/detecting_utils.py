@@ -7,9 +7,9 @@ from typing import List, Tuple
 import geometry_msgs.msg
 import tf2_geometry_msgs
 from scipy.spatial.transform import Rotation as R 
-import matplotlib.pyplot as plt
-import matplotlib.animation as animation
-from mpl_toolkits.mplot3d import Axes3D
+# import matplotlib.pyplot as plt
+# import matplotlib.animation as animation
+# from mpl_toolkits.mplot3d import Axes3D
 
 # JOINT SPACE INTERPOLATION APPROACH    
 def generate_joint_space_centered_motion(
@@ -67,14 +67,14 @@ def generate_joint_space_centered_motion(
         start_sequence = copy.deepcopy(sequence_center)
         start_sequence[0] = sequence_center[0] - (shoulder_pan_joint_interval * (num_elements - 1)) / 2
         start_sequence[4] = sequence_center[4] + (shoulder_pan_joint_interval * (num_elements - 1)) / 2
-        start_sequence[5] = sequence_center[5] + (wrist_3_interval * (num_elements - 1)) / 2
+        start_sequence[5] = sequence_center[5] - (wrist_3_interval * (num_elements - 1)) / 2
         sequence.append(start_sequence)
 
         for i in range(1, num_elements):
             next_sequence = copy.deepcopy(sequence[i-1])
             next_sequence[0] += shoulder_pan_joint_interval
             next_sequence[4] -= wrist_2_interval
-            next_sequence[5] -= wrist_3_interval
+            next_sequence[5] += wrist_3_interval
             sequence.append(next_sequence)
 
         return sequence
@@ -268,9 +268,9 @@ def generate_pose_space_centered_motion(
     num_elements: int,
     axis_of_motion: Tuple[float, float, float],
     cartesian_interval: float,
-    target_distance: float = 1.0, # Distance to the virtual target point
-    pointing_axis: Tuple[float, float, float] = (0.0, 0.0, 1.0), # Default: Point with Z-axis
-    constraint_axis: Tuple[float, float, float] = (1.0, 0.0, 0.0) # Default: Try to keep X-axis level
+    target_distance: float, # Distance to the virtual target point
+    pointing_axis: Tuple[float, float, float], 
+    constraint_axis: Tuple[float, float, float]
 ) -> Union[List[List[float]],None]:
     """
     Generates a motion sequence using IK, centered around an initial joint configuration.
@@ -298,7 +298,7 @@ def generate_pose_space_centered_motion(
     try:
         pointing_vector = get_pointing_vector(center_orientation, pointing_axis_np)
         if pointing_vector is None:
-            raise ValueError("Error: Could not determine pointing vector from center orientation.")
+            raise RuntimeError("Error: Could not determine pointing vector from center orientation.")
         
         target_point = center_position + target_distance * pointing_vector
         total_distance = cartesian_interval * (num_elements - 1)
@@ -306,16 +306,16 @@ def generate_pose_space_centered_motion(
         path_end_point = center_position + (total_distance / 2.0) * axis_of_motion_np
         path_positions = np.linspace(path_start_point, path_end_point, num_elements)
 
+        # Calculate desired orientation for this position
+        desired_orientation = calculate_orientation_for_pointing(
+            center_position, target_point, pointing_axis_np, constraint_axis_np
+        )
+        if desired_orientation is None:
+            raise RuntimeError(f"  Warning: Could not calculate orientation for step {i}")
+
         motion_sequence = []
         for i, position in enumerate(path_positions):
             try:
-                # Calculate desired orientation for this position
-                desired_orientation = calculate_orientation_for_pointing(
-                    position, target_point, pointing_axis_np, constraint_axis_np
-                )
-                if desired_orientation is None:
-                    raise RuntimeError(f"  Warning: Could not calculate orientation for step {i}")
-
                 # Create the target pose object
                 target_pose = create_pose(position, desired_orientation)
 
@@ -330,120 +330,120 @@ def generate_pose_space_centered_motion(
     rospy.loginfo(f"Generated {len(motion_sequence)} valid joint configurations.")
     return motion_sequence
 
-def plot_motion_sequence(
-    poses: List[geometry_msgs.msg.PoseStamped],
-    target_point: np.ndarray,
-    arrow_length: float = 0.05
-):
-    """
-    Plots the sequence of poses and their pointing direction toward the target.
-    """
-    fig = plt.figure(figsize=(10, 8))
-    ax = fig.add_subplot(111, projection='3d')
+# def plot_motion_sequence(
+#     poses: List[geometry_msgs.msg.PoseStamped],
+#     target_point: np.ndarray,
+#     arrow_length: float = 0.05
+# ):
+#     """
+#     Plots the sequence of poses and their pointing direction toward the target.
+#     """
+#     fig = plt.figure(figsize=(10, 8))
+#     ax = fig.add_subplot(111, projection='3d')
 
-    # Extract positions
-    xs, ys, zs = [], [], []
-    for pose in poses:
-        xs.append(pose.pose.position.x)
-        ys.append(pose.pose.position.y)
-        zs.append(pose.pose.position.z)
+#     # Extract positions
+#     xs, ys, zs = [], [], []
+#     for pose in poses:
+#         xs.append(pose.pose.position.x)
+#         ys.append(pose.pose.position.y)
+#         zs.append(pose.pose.position.z)
 
-    ax.plot(xs, ys, zs, 'o-', label="Motion Path", color='blue')
+#     ax.plot(xs, ys, zs, 'o-', label="Motion Path", color='blue')
 
-    # Plot the target
-    ax.scatter(target_point[0], target_point[1], target_point[2], color='red', s=100, label="Target Point")
+#     # Plot the target
+#     ax.scatter(target_point[0], target_point[1], target_point[2], color='red', s=100, label="Target Point")
 
-    # Draw arrows showing the pointing direction
-    for pose in poses:
-        position = np.array([
-            pose.pose.position.x,
-            pose.pose.position.y,
-            pose.pose.position.z
-        ])
-        orientation = pose.pose.orientation
-        pointing_vec = get_pointing_vector(orientation, np.array([0, 0, 1]))  # Assuming pointing_axis is Z+
+#     # Draw arrows showing the pointing direction
+#     for pose in poses:
+#         position = np.array([
+#             pose.pose.position.x,
+#             pose.pose.position.y,
+#             pose.pose.position.z
+#         ])
+#         orientation = pose.pose.orientation
+#         pointing_vec = get_pointing_vector(orientation, np.array([0, 0, 1]))  # Assuming pointing_axis is Z+
 
-        if pointing_vec is not None:
-            ax.quiver(
-                position[0], position[1], position[2],
-                pointing_vec[0], pointing_vec[1], pointing_vec[2],
-                length=arrow_length, color='green', normalize=True
-            )
+#         if pointing_vec is not None:
+#             ax.quiver(
+#                 position[0], position[1], position[2],
+#                 pointing_vec[0], pointing_vec[1], pointing_vec[2],
+#                 length=arrow_length, color='green', normalize=True
+#             )
 
-    ax.set_xlabel('X')
-    ax.set_ylabel('Y')
-    ax.set_zlabel('Z')
-    ax.legend()
-    ax.set_title('Pose Space Centered Motion Pointing Toward Target')
-    ax.grid(True)
-    ax.set_box_aspect([1,1,1])  # Equal aspect ratio
-    plt.show()
+#     ax.set_xlabel('X')
+#     ax.set_ylabel('Y')
+#     ax.set_zlabel('Z')
+#     ax.legend()
+#     ax.set_title('Pose Space Centered Motion Pointing Toward Target')
+#     ax.grid(True)
+#     ax.set_box_aspect([1,1,1])  # Equal aspect ratio
+#     plt.show()
 
-def animate_motion_sequence(
-    poses: List[geometry_msgs.msg.PoseStamped],
-    target_point: np.ndarray,
-    arrow_length: float = 0.05,
-    interval_ms: int = 500
-):
-    """
-    Animates the pose sequence and their pointing directions.
-    """
-    fig = plt.figure(figsize=(10, 8))
-    ax = fig.add_subplot(111, projection='3d')
+# def animate_motion_sequence(
+#     poses: List[geometry_msgs.msg.PoseStamped],
+#     target_point: np.ndarray,
+#     arrow_length: float = 0.05,
+#     interval_ms: int = 500
+# ):
+#     """
+#     Animates the pose sequence and their pointing directions.
+#     """
+#     fig = plt.figure(figsize=(10, 8))
+#     ax = fig.add_subplot(111, projection='3d')
 
-    # Set up plot
-    ax.scatter(target_point[0], target_point[1], target_point[2], color='red', s=100, label="Target Point")
-    ax.set_xlabel('X')
-    ax.set_ylabel('Y')
-    ax.set_zlabel('Z')
-    ax.legend()
-    ax.set_title('Animated Pose Space Centered Motion')
-    ax.grid(True)
-    ax.set_box_aspect([1,1,1])
+#     # Set up plot
+#     ax.scatter(target_point[0], target_point[1], target_point[2], color='red', s=100, label="Target Point")
+#     ax.set_xlabel('X')
+#     ax.set_ylabel('Y')
+#     ax.set_zlabel('Z')
+#     ax.legend()
+#     ax.set_title('Animated Pose Space Centered Motion')
+#     ax.grid(True)
+#     ax.set_box_aspect([1,1,1])
 
-    # Initialization
-    point_plot, = ax.plot([], [], [], 'bo', markersize=8)
-    line_plot, = ax.plot([], [], [], 'b--')
-    quiver = None  # Will store the arrow
+#     # Initialization
+#     point_plot, = ax.plot([], [], [], 'bo', markersize=8)
+#     line_plot, = ax.plot([], [], [], 'b--')
+#     quiver = None  # Will store the arrow
 
-    path_x, path_y, path_z = [], [], []
+#     path_x, path_y, path_z = [], [], []
 
-    def update(frame_idx):
-        nonlocal quiver
+#     def update(frame_idx):
+#         nonlocal quiver
 
-        pose = poses[frame_idx]
-        position = np.array([
-            pose.pose.position.x,
-            pose.pose.position.y,
-            pose.pose.position.z
-        ])
-        orientation = pose.pose.orientation
-        pointing_vec = get_pointing_vector(orientation, np.array([0, 0, 1]))  # Assume Z-axis pointing
+#         pose = poses[frame_idx]
+#         position = np.array([
+#             pose.pose.position.x,
+#             pose.pose.position.y,
+#             pose.pose.position.z
+#         ])
+#         orientation = pose.pose.orientation
+#         pointing_vec = get_pointing_vector(orientation, np.array([0, 0, 1]))  # Assume Z-axis pointing
 
-        path_x.append(position[0])
-        path_y.append(position[1])
-        path_z.append(position[2])
+#         path_x.append(position[0])
+#         path_y.append(position[1])
+#         path_z.append(position[2])
 
-        point_plot.set_data(position[0:2])
-        point_plot.set_3d_properties(position[2])
+#         point_plot.set_data(position[0:2])
+#         point_plot.set_3d_properties(position[2])
 
-        line_plot.set_data(path_x, path_y)
-        line_plot.set_3d_properties(path_z)
+#         line_plot.set_data(path_x, path_y)
+#         line_plot.set_3d_properties(path_z)
 
-        # Remove old quiver
-        if quiver:
-            quiver.remove()
+#         # Remove old quiver
+#         if quiver:
+#             quiver.remove()
 
-        # Add new quiver (pointing arrow)
-        if pointing_vec is not None:
-            quiver = ax.quiver(
-                position[0], position[1], position[2],
-                pointing_vec[0], pointing_vec[1], pointing_vec[2],
-                length=arrow_length, color='green', normalize=True
-            )
+#         # Add new quiver (pointing arrow)
+#         if pointing_vec is not None:
+#             quiver = ax.quiver(
+#                 position[0], position[1], position[2],
+#                 pointing_vec[0], pointing_vec[1], pointing_vec[2],
+#                 length=arrow_length, color='green', normalize=True
+#             )
 
-        return point_plot, line_plot, quiver
+#         return point_plot, line_plot, quiver
 
-    ani = animation.FuncAnimation(fig, update, frames=len(poses),
-                                   interval=interval_ms, blit=False, repeat=True)
-    plt.show()
+#     ani = animation.FuncAnimation(fig, update, frames=len(poses),
+#                                    interval=interval_ms, blit=False, repeat=True)
+#     plt.show()

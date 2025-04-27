@@ -23,21 +23,21 @@ class CustomDetectingMotion:
         # self.eef_link = self.move_group.get_end_effector_link()
         self.reference_frame = "base_link"
 
-        self.pose_pub = rospy.Publisher("/start_motion", Bool, queue_size=10)
+        self.status_pub = rospy.Publisher("/start_motion", Bool, queue_size=10)
 
-        self.num_elements= 3
+        self.num_elements= 9
 
         """ JOINT SPACE INTERPOLATION APPROACH """
         self.shoulder_pan_joint_interval = 0.1 # In radians
         self.wrist_2_interval = 0.1 # In radians
-        self.wrist_3_interval = 0.03 # In radians
+        self.wrist_3_interval = 0.1 # In radians
 
-        """ POSE SPACE INTERPOLATION APPROACH """
-        self.cartesian_interval = 0.05 # In meters
-        self.target_distance = 0.6 # In meters
-        self.axis_of_motion = (0.0, 1.0, 0.0) # Move along world Y-axis
-        self.pointing_axis = (0.0, 0.0, 1.0) # Point with Z-axis
-        self.constraint_axis = (0.0, 1.0, 0.0) # Try to keep Y-axis level
+        # """ POSE SPACE INTERPOLATION APPROACH """
+        # self.cartesian_interval = 0.01 # In meters
+        # self.target_distance = 0.4 # In meters
+        # self.axis_of_motion = (1.0, 0.0, 0.0) # Move along world Y-axis
+        # self.pointing_axis = (0.0, 0.0, 1.0) # Point with Z-axis
+        # self.constraint_axis = (1.0, 0.0, 0.0) # Try to keep Y-axis level
 
     def get_base_joint_values(self):
         """
@@ -69,7 +69,7 @@ class CustomDetectingMotion:
                 self.wrist_3_interval
             )
 
-            for joint_values in sequence:
+            for idx, joint_values in enumerate(sequence):
                 self.arm_group.set_joint_value_target(joint_values)
                 success, traj_plan, _, _ = self.arm_group.plan()
 
@@ -78,44 +78,46 @@ class CustomDetectingMotion:
                     continue
 
                 self.arm_group.execute(traj_plan, wait=True)
-                rospy.loginfo("Executed planned trajectory to detecting motion: %s", traj_plan)
+                rospy.loginfo("Executed planned trajectory to detecting motion ...")
+                self.status_pub.publish(Bool(data=True))
+                rospy.loginfo("Taking visual input from angles %d ...", idx)
                 rospy.sleep(1)
 
         except Exception as e:
             rospy.logerr("An error occurred: %s", str(e))
 
-    def run_pose_space_detecting_motion(self):
-        """
-        Executes the motion sequence in pose space.
-        """
-        try:
-            center_joint_angles = self.get_base_joint_values()
-            center_position, center_orientation = self.get_base_pose()
-            sequence = generate_pose_space_centered_motion(
-                center_position,
-                center_orientation, 
-                self.num_elements,
-                self.axis_of_motion, 
-                self.cartesian_interval,
-                self.target_distance,
-                self.pointing_axis,
-                self.constraint_axis
-            )
+    # def run_pose_space_detecting_motion(self):
+    #     """
+    #     Executes the motion sequence in pose space.
+    #     """
+    #     try:
+    #         center_joint_angles = self.get_base_joint_values()
+    #         center_position, center_orientation = self.get_base_pose()
+    #         sequence = generate_pose_space_centered_motion(
+    #             center_position,
+    #             center_orientation, 
+    #             self.num_elements,
+    #             self.axis_of_motion, 
+    #             self.cartesian_interval,
+    #             self.target_distance,
+    #             self.pointing_axis,
+    #             self.constraint_axis
+    #         )
 
-            for pose in sequence:
-                self.arm_group.set_pose_target(pose)
-                success, traj_plan, _, _ = self.arm_group.plan()
+    #         for pose in sequence:
+    #             self.arm_group.set_pose_target(pose)
+    #             success, traj_plan, _, _ = self.arm_group.plan()
 
-                if not success:
-                    rospy.logerr("Failed to plan movement for pose: %s", pose)
-                    continue
+    #             if not success:
+    #                 rospy.logerr("Failed to plan movement for pose: %s", pose)
+    #                 continue
 
-                self.arm_group.execute(traj_plan, wait=True)
-                rospy.loginfo("Executed planned trajectory to detecting motion: %s", traj_plan)
-                rospy.sleep(1)
+    #             self.arm_group.execute(traj_plan, wait=True)
+    #             rospy.loginfo("Executed planned trajectory to detecting motion: %s", traj_plan)
+    #             rospy.sleep(1)
 
-        except Exception as e:
-            rospy.logerr("An error occurred: %s", str(e))
+    #     except Exception as e:
+    #         rospy.logerr("An error occurred: %s", str(e))
 
     def run_ready_pose(self):
         """
@@ -130,7 +132,9 @@ class CustomDetectingMotion:
                 return
 
             self.arm_group.execute(traj_plan, wait=True)
-            rospy.loginfo("Executed planned trajectory to ready pose: %s", traj_plan)
+            rospy.loginfo("Executed planned trajectory to ready pose ...")
+            self.status_pub.publish(Bool(data=False))
+            rospy.loginfo("Finish taking visual input from different angles ...")
 
         except Exception as e:
             rospy.logerr("An error occurred while moving to ready pose: %s", str(e))
@@ -138,8 +142,8 @@ class CustomDetectingMotion:
 if __name__ == "__main__":
     try:
         detecting_motion = CustomDetectingMotion()
-        # detecting_motion.run_joint_space_detecting_motion()
-        detecting_motion.run_pose_space_detecting_motion()
+        detecting_motion.run_joint_space_detecting_motion()
+        # detecting_motion.run_pose_space_detecting_motion()
         detecting_motion.run_ready_pose()
         rospy.loginfo("Finished executing detecting motion and moving to ready pose.")
     except rospy.ROSInterruptException:
