@@ -16,6 +16,9 @@ def generate_joint_space_centered_motion(
         sequence_center, 
         num_elements, 
         shoulder_pan_joint_interval,
+        shoulder_lift_joint_interval,
+        elbow_joint_interval,
+        wrist_1_interval,
         wrist_2_interval, 
         wrist_3_interval
     ) -> Union[List[List[Union[int, float]]], None]:
@@ -26,6 +29,8 @@ def generate_joint_space_centered_motion(
         sequence_center (list): The center value for the sequence.
         num_elements (int): The number of elements in the sequence.
         shoulder_pan_joint_interval (float): The interval for the shoulder pan joint.
+        shoulder_lift_joint_interval (float): The interval for the shoulder lift joint.
+        wrist_1_interval (float): The interval for the wrist 1 joint.
         wrist_2_interval (float): The interval for the wrist 2 joint.
         wrist_3_interval (float): The interval for the wrist 3 joint.
 
@@ -54,6 +59,8 @@ def generate_joint_space_centered_motion(
     
         rospy.loginfo("Generating motion sequence with center: %s, num_elements: %d", sequence_center, num_elements)
         rospy.loginfo("Shoulder pan joint interval: %f, Wrist 2 interval: %f, Wrist 3 interval: %f", shoulder_pan_joint_interval, wrist_2_interval, wrist_3_interval)
+        rospy.loginfo("Shoulder lift joint interval: %f, Elbow joint interval: %f, Wrist 1 interval: %f", shoulder_lift_joint_interval, elbow_joint_interval, wrist_1_interval)
+
 
         if num_elements <= 0:
             return None
@@ -61,21 +68,40 @@ def generate_joint_space_centered_motion(
             return [sequence_center]
             
         # Initialize movement sequence
-        sequence = []
+        sequence_1 = []
             
         # Calculate the start value of the shoulder pan joint, wrist 2 joint, and wrist 3 joint
-        start_sequence = copy.deepcopy(sequence_center)
-        start_sequence[0] = sequence_center[0] - (shoulder_pan_joint_interval * (num_elements - 1)) / 2
-        start_sequence[4] = sequence_center[4] + (shoulder_pan_joint_interval * (num_elements - 1)) / 2
-        start_sequence[5] = sequence_center[5] - (wrist_3_interval * (num_elements - 1)) / 2
-        sequence.append(start_sequence)
+        start_sequence_1 = copy.deepcopy(sequence_center)
+        start_sequence_1[0] = start_sequence_1[0] - (shoulder_pan_joint_interval * (num_elements - 1)) / 2
+        start_sequence_1[4] = start_sequence_1[4] + (wrist_2_interval * (num_elements - 1)) / 2
+        start_sequence_1[5] = start_sequence_1[5] - (wrist_3_interval * (num_elements - 1)) / 2
+        sequence_1.append(start_sequence_1)
 
         for i in range(1, num_elements):
-            next_sequence = copy.deepcopy(sequence[i-1])
-            next_sequence[0] += shoulder_pan_joint_interval
-            next_sequence[4] -= wrist_2_interval
-            next_sequence[5] += wrist_3_interval
-            sequence.append(next_sequence)
+            next_sequence_1 = copy.deepcopy(sequence_1[i-1])
+            next_sequence_1[0] += shoulder_pan_joint_interval
+            next_sequence_1[4] -= wrist_2_interval
+            next_sequence_1[5] += wrist_3_interval
+            sequence_1.append(next_sequence_1)
+
+        # Initialize movement sequence
+        sequence_2 = []
+
+        # Calculate the start value of the shoulder lift joint, wrist 1 joint, and wrist 3 joint
+        start_sequence_2 = copy.deepcopy(sequence_center) 
+        start_sequence_2[1] = start_sequence_2[1] + (shoulder_lift_joint_interval * (num_elements - 1)) /2
+        start_sequence_2[2] = start_sequence_2[2] - (elbow_joint_interval * (num_elements - 1)) / 2
+        start_sequence_2[3] = start_sequence_2[3] + (wrist_1_interval * (num_elements - 1)) / 2
+        sequence_2.append(start_sequence_2)
+
+        for i in range(1, num_elements):
+            next_sequence_2 = copy.deepcopy(sequence_2[i-1])
+            next_sequence_2[1] -= shoulder_lift_joint_interval
+            next_sequence_2[2] += elbow_joint_interval
+            next_sequence_2[3] -= wrist_1_interval
+            sequence_2.append(next_sequence_2)
+
+        sequence  = sequence_1 + sequence_2
 
         return sequence
     except Exception as e:
@@ -174,6 +200,7 @@ def calculate_orientation_for_pointing(current_pos: np.ndarray,
     try:
         # 1. Calculate the primary direction vector (world frame)
         primary_vec_world = target_pos - current_pos
+        rospy.loginfo(f"  Primary vector (world frame)={primary_vec_world}")
         primary_vec_norm = np.linalg.norm(primary_vec_world)
         if primary_vec_norm < 1e-6:
             rospy.logwarn("Warning: Current position is very close to target position. Cannot determine unique pointing direction. Returning identity.")
@@ -198,6 +225,7 @@ def calculate_orientation_for_pointing(current_pos: np.ndarray,
              # For now, proceed assuming Z-axis pointing for demonstration
              
         target_z_world = primary_vec_world
+        rospy.loginfo(f"  Target Z-axis (world frame)={target_z_world}")
 
         # 3. Calculate the target Y-axis using the cross product with the constraint axis.
         #    target_y = normalize(cross(target_z, constraint_axis))
@@ -219,16 +247,19 @@ def calculate_orientation_for_pointing(current_pos: np.ndarray,
                  return None # Still couldn't find a good axis
                  
         target_y_world = target_y_world / target_y_norm
+        rospy.loginfo(f"  Target Y-axis (world frame)={target_y_world}")
 
         # 4. Calculate the target X-axis (must be orthogonal to Y and Z)
         #    target_x = cross(target_y, target_z)
         target_x_world = np.cross(target_y_world, target_z_world)
         # Normalization should not be needed here if Y and Z were orthogonal and normalized, but good practice:
         target_x_world = target_x_world / np.linalg.norm(target_x_world) 
+        rospy.loginfo(f"  Target X-axis (world frame)={target_x_world}")
 
         # 5. Construct the rotation matrix. Columns are the target axes in the world frame.
         #    R = [target_x_world | target_y_world | target_z_world]
         rotation_matrix = np.column_stack((target_x_world, target_y_world, target_z_world))
+        rospy.loginfo(f"  Rotation matrix (world frame)={rotation_matrix}")
 
         # 6. Convert the rotation matrix to a quaternion using Scipy.
         #    Scipy's as_quat() returns [x, y, z, w]
@@ -306,16 +337,16 @@ def generate_pose_space_centered_motion(
         path_end_point = center_position + (total_distance / 2.0) * axis_of_motion_np
         path_positions = np.linspace(path_start_point, path_end_point, num_elements)
 
-        # Calculate desired orientation for this position
-        desired_orientation = calculate_orientation_for_pointing(
-            center_position, target_point, pointing_axis_np, constraint_axis_np
-        )
-        if desired_orientation is None:
-            raise RuntimeError(f"  Warning: Could not calculate orientation for step {i}")
-
         motion_sequence = []
         for i, position in enumerate(path_positions):
             try:
+                # Calculate desired orientation for this position
+                desired_orientation = calculate_orientation_for_pointing(
+                    position, target_point, pointing_axis_np, constraint_axis_np
+                )
+                if desired_orientation is None:
+                    raise RuntimeError(f"  Warning: Could not calculate orientation for step {i}")
+
                 # Create the target pose object
                 target_pose = create_pose(position, desired_orientation)
 
