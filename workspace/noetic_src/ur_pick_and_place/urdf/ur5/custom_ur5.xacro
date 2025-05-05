@@ -1,11 +1,16 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://wiki.ros.org/xacro" name="workcell">
+
+  <xacro:arg name="use_nominal_extrinsics" default="false"/>
   
   <!-- import ur5 -->
   <xacro:include filename="$(find ur_pick_and_place)/urdf/ur5/ur5_macro.xacro"/>
 
   <!-- import robotiq 2f-85 -->
   <xacro:include filename="$(find ur_pick_and_place)/urdf/gripper2f85/robotiq_arg2f_85_model_macro.xacro"/>
+
+  <!-- import realsense d455 -->
+  <xacro:include filename="$(find ur_pick_and_place)/urdf/realsensed455/_d455.urdf.xacro" />
   
   <!-- parameters -->
 
@@ -14,6 +19,12 @@
 
   <!-- robotiq 2f-85 -->
   <xacro:robotiq_arg2f_85 prefix=""/>
+
+  <!-- realsense d455 -->
+  <xacro:sensor_d455 parent="robotiq_arg2f_base_link" use_nominal_extrinsics="$(arg use_nominal_extrinsics)">
+    <!-- y + 1.5cm, x + 8cm, pitch - pi/2 -->
+    <origin xyz="0.08 0.0 0.015" rpy="0.0 ${-pi/2} 0.0"/> 
+  </xacro:sensor_d455>
 
   <link name="world" />
   <joint name="world_joint" type="fixed">
