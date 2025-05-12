@@ -121,31 +121,33 @@ Launch Custom Moveit Manipulator Node
 $ rosrun ur_pick_and_place custom_moveit_manipulator.py
 ```
 
-####  Run Intel RealSense SDK 2.0
+####  Run Main Processing Pipeline
 
-For testing if camera is connected or not
+Run Custom Robot Bringup as Ros Master
 
 ```sh
-$ sudo realsense-viewer
+$ roslaunch ur_pick_and_place custom_ur5_bringup.launch 
 ```
 
-Or run as ROOT user on the container
+Run MoveIt Configuration
 
 ```sh
-$ docker exec -ti --user root ros_noetic bash
-$ source devel/setup.bash
+$ roslaunch ur_pick_and_place custom_move_group.launch 
+```
+Run RosBridge Server
+
+```sh
+$ roslaunch rosbridge_server rosbridge_websocket.launch
 ```
 
+Run Custom Web Interface Node
+
 ```sh
-$ realsense-viewer
+$ roslaunch ur_pick_and_place custom_web_app.py
 ```
 
-```sh
-$ roslaunch realsense2_camera rs_camera.launch
-```
-
-Display the visalization on Rviz
+Run Custom Detection Motion Node
 
 ```sh
-$ rviz
+$ roslaunch ur_pick_and_place custom_detecting_motion.py 
 ```
