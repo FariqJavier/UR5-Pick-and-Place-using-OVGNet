@@ -4,7 +4,7 @@ import moveit_commander
 import os
 import sys
 import numpy as np
-from std_msgs.msg import Bool
+from std_msgs.msg import Bool, String
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 ROOT_DIR = os.path.dirname(SCRIPT_DIR)
@@ -16,6 +16,8 @@ class CustomDetectingMotion:
     def __init__(self):
         moveit_commander.roscpp_initialize(sys.argv)
         rospy.init_node('custom_detecting_motion', anonymous=True)
+        self.cmd_status_sub = rospy.Subscriber('/cmd_status', String, self.cmd_status_callback)
+
         self.robot = moveit_commander.RobotCommander()
         self.scene = moveit_commander.PlanningSceneInterface()
         self.arm_group = moveit_commander.MoveGroupCommander("arm")
@@ -41,6 +43,17 @@ class CustomDetectingMotion:
         self.axis_of_motion = (1.0, 0.0, 0.0) # Move along world Y-axis
         self.pointing_axis = (0.0, 1.0, 0.0) # End effector pointing X-axis
         self.constraint_axis = (1.0, 0.0, 0.0) # Try to keep X-axis level constraint
+
+    def cmd_status_callback(self, msg):
+        try:
+            rospy.loginfo('Web Command Received: %s', msg.data)
+            rospy.loginfo("Executing executing detecting motion.")
+            self.run_ready_pose()
+            self.run_joint_space_detecting_motion()
+            self.run_ready_pose()
+            rospy.loginfo("Finished executing detecting motion and moving to ready pose.")
+        except Exception as e:
+            rospy.logerr(f"Error processing command: {str(e)}")
 
     def get_base_joint_values(self):
         """
@@ -155,13 +168,9 @@ class CustomDetectingMotion:
 
 if __name__ == "__main__":
     try:
-        detecting_motion = CustomDetectingMotion()
-        # detecting_motion.run_pose_space_detecting_motion()
-        detecting_motion.run_ready_pose()
-        detecting_motion.run_joint_space_detecting_motion()
-        detecting_motion.run_ready_pose()
-        rospy.loginfo("Finished executing detecting motion and moving to ready pose.")
-    except rospy.ROSInterruptException:
+        print("Custom Detecting Motion script started")
+        CustomDetectingMotion()
+        rospy.spin()
         pass
     finally:
         moveit_commander.roscpp_shutdown()
