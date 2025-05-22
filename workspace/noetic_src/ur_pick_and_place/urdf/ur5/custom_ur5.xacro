@@ -11,6 +11,8 @@
 
   <!-- import realsense d455 -->
   <xacro:include filename="$(find ur_pick_and_place)/urdf/realsensed455/_d455.urdf.xacro" />
+
+  <xacro:include filename="$(find ur_pick_and_place)/urdf/ur5/table.urdf.xacro"/>
   
   <!-- parameters -->
 
@@ -23,7 +25,8 @@
   <!-- realsense d455 -->
   <xacro:sensor_d455 parent="robotiq_arg2f_base_link" use_nominal_extrinsics="$(arg use_nominal_extrinsics)">
     <!-- y + 1.5cm, x + 8cm, pitch - pi/2 -->
-    <origin xyz="0.08 0.0 0.015" rpy="0.0 ${-pi/2} 0.0"/> 
+    <!-- <origin xyz="0.08 0.0 0.015" rpy="0.0 ${-pi/2} 0.0"/>  -->
+    <origin xyz="0.095 0.0 0.023" rpy="0.0 ${-pi/2} 0.0"/> 
   </xacro:sensor_d455>
 
   <link name="world" />
@@ -39,4 +42,9 @@
     <origin xyz="0 0 0" rpy="0.0 ${pi/2} 0.0"/>
   </joint>
 
+  <joint name="world_to_table" type="fixed">
+    <parent link="world"/>
+    <child link="table_top_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
 </robot>
