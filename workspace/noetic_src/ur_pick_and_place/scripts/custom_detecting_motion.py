@@ -30,12 +30,12 @@ class CustomDetectingMotion:
         self.num_elements= 5 # Number of elements in the motion sequence on each axis
 
         """ JOINT SPACE INTERPOLATION APPROACH """
-        self.shoulder_pan_joint_interval = 0.2 # In radians
-        self.shoulder_lift_joint_interval = 0.2 # In radians
-        self.elbow_joint_interval = 0.2 # In radians
-        self.wrist_1_joint_interval = 0.2 # In radians
-        self.wrist_2_interval = 0.2 # In radians
-        self.wrist_3_interval = 0.2 # In radians
+        self.shoulder_pan_joint_interval = 0.1 # In radians
+        self.shoulder_lift_joint_interval = 0.1 # In radians
+        self.elbow_joint_interval = 0.1 # In radians
+        self.wrist_1_joint_interval = 0.1 # In radians
+        self.wrist_2_interval = 0.1 # In radians
+        self.wrist_3_interval = 0.1 # In radians
 
         """ POSE SPACE INTERPOLATION APPROACH """
         self.cartesian_interval = 0.05 # In meters
@@ -100,6 +100,7 @@ class CustomDetectingMotion:
 
                 self.arm_group.execute(traj_plan, wait=True)
                 rospy.loginfo("Executed planned trajectory to detecting motion ...")
+                rospy.sleep(2)
                 self.status_pub.publish(Bool(data=True))
                 rospy.loginfo("Taking visual input from angles %d ...", idx)
                 rospy.sleep(1)
