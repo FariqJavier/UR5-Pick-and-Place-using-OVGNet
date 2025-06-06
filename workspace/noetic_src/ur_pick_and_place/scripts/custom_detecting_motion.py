@@ -100,7 +100,7 @@ class CustomDetectingMotion:
 
                 self.arm_group.execute(traj_plan, wait=True)
                 rospy.loginfo("Executed planned trajectory to detecting motion ...")
-                rospy.sleep(2)
+                rospy.sleep(1)
                 self.status_pub.publish(Bool(data=True))
                 rospy.loginfo("Taking visual input from angles %d ...", idx)
                 rospy.sleep(1)
@@ -154,13 +154,12 @@ class CustomDetectingMotion:
             success, traj_plan, _, _ = self.arm_group.plan()
             self.arm_group.stop() # Ensures no residual movement
             self.arm_group.clear_pose_targets()
-
             if not success:
                 rospy.logerr("Failed to plan movement to ready pose.")
                 return
-
             self.arm_group.execute(traj_plan, wait=True)
             rospy.loginfo("Executed planned trajectory to ready pose ...")
+
             self.status_pub.publish(Bool(data=False))
             rospy.loginfo("Finish taking visual input from different angles ...")
 
