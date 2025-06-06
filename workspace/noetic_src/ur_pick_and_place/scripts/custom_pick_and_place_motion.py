@@ -31,7 +31,8 @@ class CustomPickAndPlaceMotion:
             rospy.loginfo("Executing Picking Motion ...")
 
             self.run_picking_pose(msg)
-            # self.run_ready_pose()
+            self.run_placing_pose()
+            self.run_ready_pose()
             
             self.completed_motion_pub.publish(Bool(data=False))
             rospy.loginfo("Finish Pick and Place motion for an object ...")
@@ -70,18 +71,21 @@ class CustomPickAndPlaceMotion:
 
             # Test gerakan orientasi ke posisi picking
             # Convert the target quaternion (orientation_target) to roll, pitch, yaw
+            target_pose = pose_msg.pose
             target_roll, target_pitch, target_yaw = euler_from_quaternion([
-                pose_msg.pose.orientation.x, 
-                pose_msg.pose.orientation.y, 
-                pose_msg.pose.orientation.z, 
-                pose_msg.pose.orientation.w
+                target_pose.orientation.x,
+                target_pose.orientation.y,
+                target_pose.orientation.z,
+                target_pose.orientation.w
             ])
             target_yaw -= math.radians(33)  # Tambahkan rotasi 180 derajat pada yaw
+
+            current_pose = self.arm_group.get_current_pose().pose
             current_roll, current_pitch, current_yaw = euler_from_quaternion([
-                self.arm_group.get_current_pose().pose.orientation.x, 
-                self.arm_group.get_current_pose().pose.orientation.y, 
-                self.arm_group.get_current_pose().pose.orientation.z, 
-                self.arm_group.get_current_pose().pose.orientation.w
+                current_pose.orientation.x,
+                current_pose.orientation.y,
+                current_pose.orientation.z,
+                current_pose.orientation.w
             ])
             # Roll Motion
             # roll_pose_stamped = PoseStamped()
@@ -151,46 +155,107 @@ class CustomPickAndPlaceMotion:
                 return
             self.arm_group.execute(traj_plan, wait=True)
             rospy.loginfo("Executed planned trajectory to picking pose (Orientation: Yaw) ...")
+            rospy.sleep(2)  # Tunggu sebentar untuk memastikan gerakan selesai
 
             # Gerakan translasi ke posisi picking
             pose_stamped = PoseStamped()
             pose_stamped.header.stamp = rospy.Time.now()
             pose_stamped.header.frame_id = self.reference_frame
-            pose_stamped.pose.position.x = pose_msg.pose.position.x
-            pose_stamped.pose.position.y = pose_msg.pose.position.y
-            pose_stamped.pose.position.z = pose_msg.pose.position.z
-            pose_stamped.pose.orientation = self.arm_group.get_current_pose().pose.orientation
-
+            pose_stamped.pose.position.x = target_pose.position.x
+            pose_stamped.pose.position.y = target_pose.position.y
+            pose_stamped.pose.position.z = target_pose.position.z
+            pose_stamped.pose.orientation = self.arm_group.get_current_pose().pose.orientation  # Tetap gunakan orientasi saat ini
             rospy.loginfo(f'Executing Pose (Translation): {pose_stamped}')
-
             self.arm_group.set_pose_target(pose_stamped)
             success, traj_plan, _, _ = self.arm_group.plan()
-
             self.arm_group.stop()
             self.arm_group.clear_pose_targets()
             # self.arm_group.clear_path_constraints()  # 4. Hapus constraint setelah plan
-
             if not success:
                 rospy.logerr("Failed to plan movement to picking pose (Translation).")
                 return
-
             self.arm_group.execute(traj_plan, wait=True)
             rospy.loginfo("Executed planned trajectory to picking pose (Translation) ...")
+            rospy.sleep(2)  # Wait for the arm to reach the pose
 
-            # self.gripper_group.set_named_target("gripper_big_close")
-            # success, traj_plan, _, _ = self.arm_group.plan()
-            # self.gripper_group.stop() # Ensures no residual movement
-            # self.gripper_group.clear_pose_targets()
+            self.gripper_group.set_named_target("gripper_small_close")
+            success, traj_plan, _, _ = self.gripper_group.plan()
+            self.gripper_group.stop() # Ensures no residual movement
+            self.gripper_group.clear_pose_targets()
+            if not success:
+                rospy.logerr("Failed to plan movement closing gripper.")
+                return
+            self.gripper_group.execute(traj_plan, wait=True)
+            rospy.loginfo("Executed planned trajectory to Small Closing Gripper ...")
+            rospy.sleep(2)  # Wait for the gripper to close
 
-            # if not success:
-            #     rospy.logerr("Failed to plan movement closing gripper.")
-            #     return
-
-            # self.gripper_group.execute(traj_plan, wait=True)
-            # rospy.loginfo("Executed planned trajectory to Big Closing Gripper ...")
+            self.arm_group.set_named_target("arm_ready")
+            success, traj_plan, _, _ = self.arm_group.plan()
+            self.arm_group.stop() # Ensures no residual movement
+            self.arm_group.clear_pose_targets()
+            if not success:
+                rospy.logerr("Failed to plan movement to ready pose.")
+                return
+            self.arm_group.execute(traj_plan, wait=True)
+            rospy.loginfo("Executed planned trajectory to ready pose ...")
+            rospy.sleep(2)  # Wait for the arm to reach the ready pose
 
         except Exception as e:
             rospy.logerr("An error occurred while moving to picking pose: %s", str(e))
+
+    def run_placing_pose(self):
+        """
+        Moves the robot to a place pose.
+        """
+        try:
+            # Set the target pose for placing
+            current_joint_values = self.arm_group.get_current_joint_values()
+            current_joint_values[0] += math.radians(90)  # rotate the first joint by 90 degrees
+            self.arm_group.set_joint_value_target(current_joint_values)
+            success, traj_plan, _, _ = self.arm_group.plan()
+            self.arm_group.stop() # Ensures no residual movement
+            self.arm_group.clear_pose_targets()
+            if not success:
+                rospy.logerr("Failed to plan movement to place rotate pose.")
+                return
+            self.arm_group.execute(traj_plan, wait=True)
+            rospy.loginfo("Executed planned trajectory to place rotate pose ...")
+            rospy.sleep(2)  # Wait for the arm to reach the pose
+
+            current_pose = self.arm_group.get_current_pose().pose
+            rospy.loginfo(f'Current Pose before placing: {current_pose}')
+            place_pose = PoseStamped()
+            place_pose.header.stamp = rospy.Time.now()
+            place_pose.header.frame_id = self.reference_frame
+            place_pose.pose.position.x = current_pose.position.x
+            place_pose.pose.position.y = current_pose.position.y
+            place_pose.pose.position.z = current_pose.position.z - 0.10 # Adjust Z position for placing
+            # Tetap gunakan orientasi saat ini
+            place_pose.pose.orientation = current_pose.orientation
+            self.arm_group.set_pose_target(place_pose)
+            success, traj_plan, _, _ = self.arm_group.plan()
+            self.arm_group.stop() # Ensures no residual movement
+            self.arm_group.clear_pose_targets()
+            if not success:
+                rospy.logerr("Failed to plan movement to place pose.")
+                return
+            self.arm_group.execute(traj_plan, wait=True)
+            rospy.loginfo("Executed planned trajectory to place pose ...")
+            rospy.sleep(2)  # Wait for the arm to reach the place pose
+
+            self.gripper_group.set_named_target("gripper_open")
+            success, traj_plan, _, _ = self.gripper_group.plan()
+            self.gripper_group.stop() # Ensures no residual movement
+            self.gripper_group.clear_pose_targets()
+            if not success:
+                rospy.logerr("Failed to plan movement opening gripper.")
+                return
+            self.gripper_group.execute(traj_plan, wait=True)
+            rospy.loginfo("Executed planned trajectory to Opening Gripper ...")
+            rospy.sleep(2)  # Wait for the gripper to open
+
+        except Exception as e:
+            rospy.logerr("An error occurred while moving to place pose: %s", str(e))
 
     def run_ready_pose(self):
         """
@@ -201,13 +266,23 @@ class CustomPickAndPlaceMotion:
             success, traj_plan, _, _ = self.arm_group.plan()
             self.arm_group.stop() # Ensures no residual movement
             self.arm_group.clear_pose_targets()
-
             if not success:
                 rospy.logerr("Failed to plan movement to ready pose.")
                 return
-
             self.arm_group.execute(traj_plan, wait=True)
             rospy.loginfo("Executed planned trajectory to ready pose ...")
+            rospy.sleep(2)  # Wait for the arm to reach the ready pose
+            
+            self.gripper_group.set_named_target("gripper_open")
+            success, traj_plan, _, _ = self.gripper_group.plan()
+            self.gripper_group.stop() # Ensures no residual movement
+            self.gripper_group.clear_pose_targets()
+            if not success:
+                rospy.logerr("Failed to plan movement opening gripper.")
+                return
+            self.gripper_group.execute(traj_plan, wait=True)
+            rospy.loginfo("Executed planned trajectory to Opening Gripper ...")
+            rospy.sleep(2)  # Wait for the gripper to open
 
         except Exception as e:
             rospy.logerr("An error occurred while moving to ready pose: %s", str(e))
