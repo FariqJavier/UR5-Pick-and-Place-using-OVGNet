@@ -143,11 +143,11 @@ $ roslaunch rosbridge_server rosbridge_websocket.launch
 Run Custom Web Interface Node
 
 ```sh
-$ roslaunch ur_pick_and_place custom_web_app.py
+$ rosrun ur_pick_and_place custom_web_app.py
 ```
 
 Run Custom Detection Motion Node
 
 ```sh
-$ roslaunch ur_pick_and_place custom_detecting_motion.py 
+$ rosrun ur_pick_and_place custom_detecting_motion.py 
 ```
