@@ -2,7 +2,8 @@
 import rospy
 import moveit_commander
 import sys
-from geometry_msgs.msg import Pose
+from geometry_msgs.msg import PoseStamped
+import math
 from pynput.keyboard import Listener, Key,KeyCode
 from tf.transformations import quaternion_multiply, quaternion_from_euler
 import numpy as np
@@ -214,8 +215,65 @@ class MoveItManipulator:
         self.arm_group.set_named_target("arm_ready")
         success, self.target_ef_traj, _, _ = self.arm_group.plan()
         print(success)
-        self.arm_group.execute(self.target_ef_traj)
-        rospy.loginfo("Executed planned trajectory: %s", self.target_ef_traj)
+        self.arm_group.execute(self.target_ef_traj, wait=True)
+        # rospy.loginfo("Executed planned trajectory: %s", self.target_ef_traj)
+        rospy.loginfo("Executed ready pose trajectory")
+        current_joint_values = self.arm_group.get_current_joint_values()
+        current_joint_values[0] += math.radians(90)  # rotate the first joint by 90 degrees
+        self.arm_group.set_joint_value_target(current_joint_values)
+        success, traj_plan, _, _ = self.arm_group.plan()
+        self.arm_group.stop() # Ensures no residual movement
+        self.arm_group.clear_pose_targets()
+        if not success:
+            rospy.logerr("Failed to plan movement to place rotate pose.")
+            return
+        self.arm_group.execute(traj_plan, wait=True)
+        rospy.loginfo("Executed planned trajectory to place rotate pose ...")
+
+        current_pose = self.arm_group.get_current_pose().pose
+        rospy.loginfo(f'Current Pose before placing: {current_pose}')
+        place_pose = PoseStamped()
+        place_pose.header.stamp = rospy.Time.now()
+        place_pose.header.frame_id = "world"  # Use the world frame or the base frame of your robot
+        place_pose.pose.position.x = current_pose.position.x
+        place_pose.pose.position.y = current_pose.position.y
+        place_pose.pose.position.z = current_pose.position.z - 0.10 # Adjust Z position for placing
+        # Tetap gunakan orientasi saat ini
+        place_pose.pose.orientation = current_pose.orientation
+
+        self.arm_group.set_pose_target(place_pose)
+        success, traj_plan, _, _ = self.arm_group.plan()
+        self.arm_group.stop() # Ensures no residual movement
+        self.arm_group.clear_pose_targets()
+        if not success:
+            rospy.logerr("Failed to plan movement to place pose.")
+            return
+        self.arm_group.execute(traj_plan, wait=True)
+        rospy.loginfo("Executed planned trajectory to place pose ...")
+        self.gripper_group.set_named_target("gripper_big_close")
+        success_2, self.target_gripper_traj, _, _ = self.gripper_group.plan()
+        if not success_2:
+            rospy.logerr("Failed to plan gripper close trajectory.")
+            return
+        self.gripper_group.execute(self.target_gripper_traj, wait=True)
+        rospy.loginfo("Executed gripper ready pose trajectory")
+        rospy.sleep(2.0)  # Wait for the gripper to close
+        self.gripper_group.set_named_target("gripper_open")
+        success_3, self.target_gripper_traj, _, _ = self.gripper_group.plan()
+        if not success_3:
+            rospy.logerr("Failed to plan gripper open trajectory.")
+            return
+        self.gripper_group.execute(self.target_gripper_traj, wait=True)
+        rospy.loginfo("Executed gripper ready pose trajectory")
+        rospy.sleep(2.0)
+        self.arm_group.set_named_target("arm_ready")
+        success_4, self.target_ef_traj, _, _ = self.arm_group.plan()
+        if not success_4:
+            rospy.logerr("Failed to plan arm ready pose trajectory.")
+            return
+        self.arm_group.execute(self.target_ef_traj, wait=True)
+        # rospy.loginfo("Executed planned trajectory: %s", self.target_ef_traj)
+        rospy.loginfo("Executed ready pose trajectory")
 
 if __name__ == "__main__":
     print("MoveItManipulator script started")
