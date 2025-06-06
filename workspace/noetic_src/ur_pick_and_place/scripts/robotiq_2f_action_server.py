@@ -173,6 +173,7 @@ class CommandGripperActionServer(object):
         if current_status.fault_status != 0 and not self._is_stalled:              
           self._is_stalled = True
           self._processing_goal = False 
+          msg = f"{self._action_name}: Gripper fault status (gFLT): {current_status.fault_status}"
           rospy.logerr(msg)
           result.error_code = -6
           result.error_string = "Gripper fault status (gFLT): " + current_status.fault_status
@@ -203,7 +204,7 @@ class CommandGripperActionServer(object):
       self._is_stalled = False 
 
     def _execution_timeout(self, event):
-        rospy.logerr("%s: Achieving goal is taking too long, dropping current goal")
+        rospy.logerr(f"{self._action_name}: Achieving goal is taking too long, dropping current goal")
         self._is_stalled = True
         self._processing_goal = False
 

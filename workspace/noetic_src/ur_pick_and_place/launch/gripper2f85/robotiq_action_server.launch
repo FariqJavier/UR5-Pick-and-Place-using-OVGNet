@@ -12,7 +12,7 @@
 
     <!-- Robotiq 2finger_gripper action Server -->
 
-    <node pkg="robotiq_2f_gripper_control" type="robotiq_2f_action_server.py"
+    <node pkg="ur_pick_and_place" type="robotiq_2f_action_server.py"
         name="$(arg name)" respawn="false" output="screen"
         launch-prefix="bash -c 'sleep $(arg delay); $0 $@'">
         <param name="comport"    value="$(arg comport)" />
